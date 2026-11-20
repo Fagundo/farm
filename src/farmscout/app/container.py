@@ -9,10 +9,13 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from farmscout.config.settings import Settings
+from farmscout.business import BusinessFitAssessor, SettingDetector
 from farmscout.enrichment.enrichers import (
+    BusinessFitEnricher,
     CountyFromCoordinatesEnricher,
     DriveTimeEnricher,
     EnrichmentChain,
+    SettingEnricher,
     ZoningClassEnricher,
 )
 from farmscout.extraction.base import FactExtractor, LayeredExtractor
@@ -163,6 +166,8 @@ def build_enricher(settings: Settings) -> EnrichmentChain:
         ZoningClassEnricher(ZoningClassifier(settings.zoning_classes)),
         CountyFromCoordinatesEnricher(settings.counties),
         DriveTimeEnricher(settings.counties, settings.home, settings.metros, settings.drive_model),
+        SettingEnricher(SettingDetector()),
+        BusinessFitEnricher(BusinessFitAssessor(settings.business_uses)),
     ])
 
 

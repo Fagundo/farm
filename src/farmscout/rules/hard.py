@@ -112,7 +112,7 @@ class LandZoningRule(HardRule):
     def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
         z = facts.zoning_class
         if z in {"farm_only", "forest_only"}:
-            return self.failed(f"Vacant land zoned '{facts.zoning}' (resource land): venue/restaurant not permittable")
+            return self.failed(f"Vacant land zoned '{facts.zoning}' (resource land): venue/restaurant/spa not permittable")
         if z == "commercial":
             return self.passed(f"Vacant land zoned '{facts.zoning}' for commercial use")
         if z == "mixed":

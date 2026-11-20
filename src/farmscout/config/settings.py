@@ -6,6 +6,7 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from farmscout.business.uses import DEFAULT_BUSINESS_USES, BusinessUse, BusinessUseCatalog
 from farmscout.geo.drive_time import CountyTable, DriveTimeModel, Place
 
 
@@ -91,6 +92,7 @@ class Settings:
     search: SearchSettings
     llm: LLMSettings
     fetch: FetchSettings
+    business_uses: BusinessUseCatalog = field(default_factory=lambda: BusinessUseCatalog(DEFAULT_BUSINESS_USES))
     rentcast: RentCastSettings = RentCastSettings()
     redfin_csv_dir: Path = Path("data/inbox")
     source_path: Path | None = field(default=None, compare=False)
@@ -130,6 +132,10 @@ class Settings:
             ),
             zoning_classes=tuple(
                 ZoningClass(c["name"], tuple(c["patterns"])) for c in raw["zoning"]["classes"]
+            ),
+            business_uses=BusinessUseCatalog(
+                [BusinessUse.from_mapping(u) for u in raw["business_uses"]]
+                if raw.get("business_uses") else DEFAULT_BUSINESS_USES
             ),
             weights={k: float(v) for k, v in raw["weights"].items()},
             penalties={k: float(v) for k, v in raw.get("penalties", {}).items()},

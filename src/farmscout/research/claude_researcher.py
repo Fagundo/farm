@@ -9,7 +9,8 @@ from farmscout.llm.base import LLMClient, parse_json_payload
 from farmscout.research.base import PropertyResearcher, ResearchResult
 
 SYSTEM = """You research one rural property for a buyer who wants to run a small farm plus a \
-sauna and an event space or farm-to-table dinners. Use web search: other listing sites for \
+small hospitality business — an event venue, a restaurant / farm-to-table dinners, or a spa \
+with sauna — in a quiet setting. Use web search: other listing sites for \
 the same address (brokerages, MLS mirrors), county assessor/GIS and zoning maps, FEMA flood \
 information, state water-rights records, county permit or planning records, and news.
 
@@ -23,8 +24,11 @@ Answer the open questions first. Then:
   or for a different property.
 - Fill any other fields you can confirm.
 - For vacant land, the zoning designation is the most important fact: find it on the county \
-  zoning map or parcel viewer and say which uses it allows (restaurant, event venue, \
-  campground, lodging), outright or by conditional use. Also confirm power, water and septic.
+  zoning map or parcel viewer and say which uses it allows (restaurant, event venue, spa or \
+  personal services, campground, lodging), outright or by conditional use. Also confirm power, \
+  water and septic.
+- setting: "secluded" if private / end of road / borders forest; "roadside" if it fronts a \
+  highway or busy road (check the map).
 
 Rules: only report what a source states. Never guess. Every fact must be backed by a URL in \
 "sources". Use null for anything not found.
@@ -40,7 +44,8 @@ Respond with ONLY this JSON object:
     "has_barn": bool|null, "largest_outbuilding_sqft": int|null,
     "road_access": "paved"|"gravel"|"shared_private"|null, "in_floodplain": bool|null, "has_hoa": bool|null,
     "property_type": "land"|"improved"|null, "has_power": bool|null, "has_public_water": bool|null,
-    "septic": "existing"|"approved"|"perc_tested"|"none"|null
+    "septic": "existing"|"approved"|"perc_tested"|"none"|null,
+    "setting": "secluded"|"roadside"|null
   },
   "notes": str,          // 1-3 sentences: what you confirmed and anything a buyer should know
   "sources": [str]       // URLs you relied on
@@ -50,7 +55,7 @@ FIELDS = (
     "url", "title", "price_usd", "acres", "state", "county", "city", "zoning", "existing_uses",
     "has_water_rights", "has_well", "water_features", "has_commercial_kitchen", "dwellings",
     "has_barn", "largest_outbuilding_sqft", "road_access", "in_floodplain", "has_hoa", "summary",
-    "listing_status", "property_type", "has_power", "has_public_water", "septic",
+    "listing_status", "property_type", "has_power", "has_public_water", "septic", "setting",
 )
 
 

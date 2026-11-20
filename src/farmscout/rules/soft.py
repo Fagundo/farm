@@ -5,50 +5,74 @@ from __future__ import annotations
 from farmscout.domain.models import PropertyFacts, RuleOutcome
 from farmscout.rules.base import Rule
 
-# Existing uses that imply a permitted commercial / hospitality pathway.
-HOSPITALITY_USES = {
-    "winery", "tasting room", "event venue", "wedding venue", "restaurant", "retreat center",
-    "bed and breakfast", "lodge", "inn", "cidery", "brewery", "distillery", "farm stand",
-    "campground", "guest ranch",
-}
+from farmscout.business.uses import DEFAULT_BUSINESS_USES, BusinessUseCatalog
+from farmscout.business.assessor import BusinessFitAssessor, Fit
+from farmscout.business.setting import ROADSIDE, SECLUDED
+
+_DEFAULT_CATALOG = BusinessUseCatalog(DEFAULT_BUSINESS_USES)
 
 
-def hospitality_uses(facts: PropertyFacts) -> list[str]:
-    return [u for u in facts.existing_uses if u.lower() in HOSPITALITY_USES]
+def hospitality_uses(facts: PropertyFacts, catalog: BusinessUseCatalog = _DEFAULT_CATALOG) -> list[str]:
+    return catalog.hospitality_uses(facts.existing_uses)
 
 
-class CommercialPathwayRule(Rule):
-    """Can this land legally host a restaurant/event/sauna business?"""
+class BusinessPathwayRule(Rule):
+    """Could this property legally host at least one of the target businesses (event venue,
+    restaurant / farm-to-table, spa with sauna)? Scores the best-fitting one."""
 
-    rule_id = "commercial_pathway"
+    rule_id = "business_pathway"
+
+    def __init__(self, max_points: float, assessor: BusinessFitAssessor | None = None) -> None:
+        super().__init__(max_points)
+        self._a = assessor or BusinessFitAssessor(_DEFAULT_CATALOG)
 
     def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
-        uses = hospitality_uses(facts)
-        if facts.zoning_class == "commercial":
-            return self.passed(f"Zoning '{facts.zoning}' reads as commercial — venue/restaurant plausible")
-        if uses:
-            return self.passed(f"Existing use ({', '.join(uses)}) suggests permits already in place")
-        if facts.zoning_class == "mixed":
-            return self.partial(0.5, f"Zoning '{facts.zoning}' may allow events via conditional use")
-        if facts.zoning_class in {"farm_only", "forest_only"}:
-            return self.failed(f"Zoning '{facts.zoning}' is resource land — venue/restaurant hard to permit")
-        if facts.zoning_class == "other":
-            return self.unknown(f"Zoning '{facts.zoning}' not recognized — check county code")
-        return self.unknown("Zoning not found — check county GIS for commercial/conditional uses")
+        assessments = self._a.assess(facts)
+        best, credit = self._a.best(facts)
+        fitting = [a.use.label for a in assessments if a.fit in {Fit.EXISTING, Fit.LIKELY}]
+        maybe = [a.use.label for a in assessments if a.fit is Fit.CONDITIONAL]
+        if fitting:
+            extra = f"; conditional: {', '.join(maybe)}" if maybe else ""
+            return self.partial(credit, f"Fits {', '.join(fitting)} ({best.reason}){extra}") if credit < 1 \
+                else self.passed(f"Fits {', '.join(fitting)} ({best.reason}){extra}")
+        if maybe:
+            return self.partial(credit, f"{', '.join(maybe)} by conditional use ({best.reason})")
+        if all(a.fit is Fit.UNKNOWN for a in assessments):
+            return self.unknown(f"Zoning: {best.reason} — check county code for venue/restaurant/spa uses")
+        limited = [a for a in assessments if a.fit is Fit.LIMITED]
+        if limited and credit > 0:
+            return self.partial(credit, f"Only limited {limited[0].use.label.lower()} ({limited[0].reason})")
+        return self.failed(f"No venue, restaurant or spa pathway ({best.reason})")
 
 
 class ExistingApprovedUseRule(Rule):
-    """Existing permitted hospitality use. Not applicable to vacant land (zoning decides there)."""
+    """Existing permitted hospitality use of any target type. Not applicable to vacant land."""
     rule_id = "existing_approved_use"
+
+    def __init__(self, max_points: float, catalog: BusinessUseCatalog = _DEFAULT_CATALOG) -> None:
+        super().__init__(max_points)
+        self._catalog = catalog
 
     def applies(self, facts: PropertyFacts) -> bool:
         return not facts.is_land
 
     def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
-        uses = hospitality_uses(facts)
+        uses = hospitality_uses(facts, self._catalog)
         if uses:
             return self.passed(f"Operating/permitted use: {', '.join(uses)}")
-        return self.failed("No existing hospitality use mentioned")
+        return self.failed("No existing venue, food or wellness business mentioned")
+
+
+class SeclusionRule(Rule):
+    """A sauna/spa/retreat sells quiet: secluded beats highway frontage."""
+    rule_id = "seclusion"
+
+    def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
+        if facts.setting == SECLUDED:
+            return self.passed("Secluded, private setting")
+        if facts.setting == ROADSIDE:
+            return self.failed("On or fronting a highway: road noise works against relaxation")
+        return self.unknown("Setting not described — check the map for road noise and neighbors")
 
 
 class WaterSupplyRule(Rule):

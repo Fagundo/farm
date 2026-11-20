@@ -18,8 +18,9 @@ Return ONLY a JSON object with exactly these keys:
   "city": str|null,
   "zoning": str|null,                 // the zoning designation as written, e.g. "EF-80", "RR-5", "Rural Commercial"
   "existing_uses": [str],             // from: winery, tasting room, event venue, wedding venue, restaurant,
-                                      // retreat center, bed and breakfast, lodge, inn, cidery, brewery,
-                                      // distillery, farm stand, campground, guest ranch — only if operating or permitted
+                                      // cafe, retreat center, bed and breakfast, lodge, inn, cidery, brewery,
+                                      // distillery, farm stand, campground, glamping, guest ranch, spa,
+                                      // bathhouse, hot springs — only if operating or permitted
   "has_water_rights": bool|null,
   "has_well": bool|null,
   "water_features": [str],            // from: creek, river, pond, lake, shoreline, spring
@@ -32,16 +33,17 @@ Return ONLY a JSON object with exactly these keys:
   "has_power": bool|null,             // power on site or at the road
   "has_public_water": bool|null,
   "septic": "existing"|"approved"|"perc_tested"|"none"|null,
+  "setting": "secluded"|"roadside"|null,     // secluded = private/end of road/borders forest; roadside = highway frontage or busy road
   "in_floodplain": bool|null,
   "has_hoa": bool|null,
-  "summary": str                      // one sentence on fit for farm + sauna + events (or, for land, what it's zoned for)
+  "summary": str                      // one sentence on fit for farm + a venue, restaurant or spa/sauna business (or, for land, what it's zoned for)
 }"""
 
 _ALLOWED = {
     "price_usd", "acres", "state", "county", "city", "zoning", "existing_uses", "has_water_rights",
     "has_well", "water_features", "has_commercial_kitchen", "dwellings", "has_barn",
     "largest_outbuilding_sqft", "road_access", "in_floodplain", "has_hoa", "summary",
-    "property_type", "has_power", "has_public_water", "septic",
+    "property_type", "has_power", "has_public_water", "septic", "setting",
 }
 
 
