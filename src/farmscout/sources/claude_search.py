@@ -29,8 +29,13 @@ class ClaudeWebSearchSource(ListingSource):
         listing_domains: Sequence[str] = (),
         per_query_limit: int = 10,
         on_error=None,
+        allowed_domains: Sequence[str] = (),
+        name: str | None = None,
     ) -> None:
         self._llm = llm
+        self._allowed = tuple(allowed_domains)
+        if name:
+            self.name = name
         self._queries = list(queries)
         self._system = SYSTEM.format(domains=", ".join(listing_domains) or "any")
         self._limit = per_query_limit
@@ -39,7 +44,8 @@ class ClaudeWebSearchSource(ListingSource):
     def discover(self) -> Iterator[RawListing]:
         for query in self._queries:
             try:
-                reply = self._llm.complete(self._system, f"Query: {query}", web_search=True)
+                reply = self._llm.complete(self._system, f"Query: {query}", web_search=True,
+                                           allowed_domains=self._allowed)
                 items = parse_json_payload(reply)
             except LLMError as exc:
                 self._on_error(query, exc)

@@ -10,6 +10,7 @@ import json
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Sequence
 
 from farmscout.llm.base import LLMClient, LLMError
 
@@ -37,7 +38,9 @@ class AnthropicClient(LLMClient):
         self._timeout = timeout
         self._retries = retries
 
-    def complete(self, system: str, user: str, *, web_search: bool = False) -> str:
+    def complete(
+        self, system: str, user: str, *, web_search: bool = False, allowed_domains: Sequence[str] = ()
+    ) -> str:
         body: dict = {
             "model": self._model,
             "max_tokens": self._max_tokens,
@@ -45,7 +48,10 @@ class AnthropicClient(LLMClient):
             "messages": [{"role": "user", "content": user}],
         }
         if web_search:
-            body["tools"] = [{"type": WEB_SEARCH_TOOL_TYPE, "name": "web_search", "max_uses": self._max_uses}]
+            tool = {"type": WEB_SEARCH_TOOL_TYPE, "name": "web_search", "max_uses": self._max_uses}
+            if allowed_domains:
+                tool["allowed_domains"] = list(allowed_domains)
+            body["tools"] = [tool]
         data = self._post(body)
         texts = [b.get("text", "") for b in data.get("content", []) if b.get("type") == "text"]
         if not texts:

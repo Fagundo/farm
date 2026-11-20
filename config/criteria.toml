@@ -129,12 +129,28 @@ places = [
   "Willamette Valley OR", "Yamhill County OR", "Columbia River Gorge OR", "Oregon Coast",
   "Clackamas County OR", "Southern Oregon",
 ]
+# "portals" source: Claude web search restricted to these sites (finds their indexed
+# listing pages through search; never crawls the sites themselves).
+portal_domains = ["zillow.com", "redfin.com", "realtor.com"]
+portal_property_types = [
+  "farm with barn and acreage", "acreage with large shop", "riverfront or creekfront acreage",
+  "horse property with arena", "wedding venue or event barn", "house on 10+ acres",
+]
 # Domains to prefer when searching (sources may use this as an allow-list hint).
 listing_domains = [
   "landsearch.com", "landwatch.com", "land.com", "farmandranch.com", "loopnet.com",
   "crexi.com", "zillow.com", "redfin.com", "realtor.com", "compass.com", "windermere.com",
   "johnlscott.com", "bhhsnw.com", "coldwellbankerhomes.com",
 ]
+
+[rentcast]
+# Licensed MLS listings API (RENTCAST_API_KEY). One request per state returns up to 500.
+states = ["WA", "OR"]
+max_pages_per_state = 2
+
+[inbox]
+# Drop Redfin "Download All" CSV exports here.
+redfin_csv_dir = "data/inbox"
 
 [llm]
 model = "claude-sonnet-5-5"

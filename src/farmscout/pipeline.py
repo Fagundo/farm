@@ -71,10 +71,15 @@ class ScoutPipeline:
 
     def evaluate(self, listing: RawListing) -> Evaluation:
         text = self._fetcher.fetch_text(listing.url)
-        if text is None and not (listing.title or listing.snippet):
+        if listing.prefilled is not None:
+            facts = listing.prefilled
+            if text is not None:  # page readable: fill gaps (zoning, water, buildings) from it
+                facts = facts.merged_with(self._extractor.extract(listing, text))
+        elif text is None and not (listing.title or listing.snippet):
             raise LookupError("page unavailable and no search snippet to work from")
-        facts = self._enricher.enrich(self._extractor.extract(listing, text))
-        return self._engine.evaluate(facts)
+        else:
+            facts = self._extractor.extract(listing, text)
+        return self._engine.evaluate(self._enricher.enrich(facts))
 
     def run(self, *, refresh: bool = False, limit: int | None = None) -> RunSummary:
         summary = RunSummary()

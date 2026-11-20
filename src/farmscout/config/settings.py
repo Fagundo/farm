@@ -29,6 +29,14 @@ class SearchSettings:
     property_types: tuple[str, ...]
     places: tuple[str, ...]
     listing_domains: tuple[str, ...]
+    portal_domains: tuple[str, ...] = ()
+    portal_property_types: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class RentCastSettings:
+    states: tuple[str, ...] = ("WA", "OR")
+    max_pages_per_state: int = 2
 
 
 @dataclass(frozen=True)
@@ -59,6 +67,8 @@ class Settings:
     search: SearchSettings
     llm: LLMSettings
     fetch: FetchSettings
+    rentcast: RentCastSettings = RentCastSettings()
+    redfin_csv_dir: Path = Path("data/inbox")
     source_path: Path | None = field(default=None, compare=False)
 
     @classmethod
@@ -94,11 +104,18 @@ class Settings:
                 property_types=tuple(s["property_types"]),
                 places=tuple(s["places"]),
                 listing_domains=tuple(s.get("listing_domains", ())),
+                portal_domains=tuple(s.get("portal_domains", ())),
+                portal_property_types=tuple(s.get("portal_property_types", ())),
             ),
             llm=LLMSettings(l["model"], int(l["max_tokens"]), int(l["web_search_max_uses"])),
             fetch=FetchSettings(
                 f["user_agent"], bool(f["respect_robots"]), float(f["delay_seconds"]),
                 float(f["timeout_seconds"]), int(f["max_chars"]),
             ),
+            rentcast=RentCastSettings(
+                states=tuple(raw.get("rentcast", {}).get("states", ("WA", "OR"))),
+                max_pages_per_state=int(raw.get("rentcast", {}).get("max_pages_per_state", 2)),
+            ),
+            redfin_csv_dir=Path(raw.get("inbox", {}).get("redfin_csv_dir", "data/inbox")),
             source_path=source_path,
         )

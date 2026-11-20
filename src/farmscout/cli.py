@@ -8,7 +8,7 @@ import logging
 import sys
 from pathlib import Path
 
-from farmscout.app.container import build_pipeline
+from farmscout.app.container import DEFAULT_SOURCES, build_pipeline
 from farmscout.config.settings import Settings
 from farmscout.domain.models import PropertyFacts, RawListing
 from farmscout.search.query_builder import QueryBuilder
@@ -25,7 +25,8 @@ def _parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
 
     run = sub.add_parser("run", help="Discover, score and report new properties")
-    run.add_argument("--sources", default="claude,seeds", help="Comma list: claude, brave, seeds")
+    run.add_argument("--sources", default=",".join(DEFAULT_SOURCES),
+                     help="Comma list: claude, portals, rentcast, redfin_csv, brave, seeds")
     run.add_argument("--limit", type=int, default=None, help="Max properties to evaluate this run")
     run.add_argument("--refresh", action="store_true", help="Re-evaluate properties already seen")
 
@@ -50,7 +51,7 @@ def main(argv: list[str] | None = None) -> int:
             print(q)
         return 0
 
-    sources = args.sources.split(",") if args.cmd == "run" else ("seeds",)
+    sources = args.sources.split(",") if args.cmd == "run" else ()
     pipeline = build_pipeline(settings, sources=sources, db_path=args.db,
                               reports_dir=args.reports, seeds_path=args.seeds, site_dir=args.site)
 

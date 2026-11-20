@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from typing import Any
 
 
@@ -14,8 +15,18 @@ class LLMError(RuntimeError):
 
 class LLMClient(ABC):
     @abstractmethod
-    def complete(self, system: str, user: str, *, web_search: bool = False) -> str:
-        """Return the model's final text answer."""
+    def complete(
+        self,
+        system: str,
+        user: str,
+        *,
+        web_search: bool = False,
+        allowed_domains: Sequence[str] = (),
+    ) -> str:
+        """Return the model's final text answer.
+
+        ``allowed_domains`` restricts web search results to those sites (e.g. zillow.com).
+        """
 
 
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)

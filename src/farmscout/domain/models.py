@@ -15,6 +15,9 @@ class RawListing:
     title: str = ""
     snippet: str = ""
     source: str = ""
+    # Structured sources (CSV exports, listing APIs) hand over facts they already know.
+    # These win over anything extracted from the page.
+    prefilled: "PropertyFacts | None" = field(default=None, compare=False)
 
 
 @dataclass

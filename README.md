@@ -11,11 +11,12 @@ Standard library only (Python 3.11+). Claude does the web searching and the list
 ```bash
 pip install -e ".[dev]"            # or just run with PYTHONPATH=src
 export ANTHROPIC_API_KEY=sk-ant-...
+export RENTCAST_API_KEY=...         # optional: licensed MLS listings (what Zillow/Redfin show)
 export BRAVE_API_KEY=...            # optional second search engine
 
 farmscout queries                   # see the searches the config generates
 farmscout run --limit 25            # discover + score up to 25 new properties
-farmscout run --sources claude,brave,seeds
+farmscout run --sources rentcast,redfin_csv   # just the listing feeds
 farmscout evaluate https://...      # score one listing and print every rule's verdict
 farmscout report                    # rebuild reports and site/index.html from the database
 farmscout import data/run-2026-11-20.json   # score facts gathered by hand
@@ -25,6 +26,35 @@ Reports land in `reports/candidates-YYYY-MM-DD.{md,csv}`, and a shareable page i
 `data/farmscout.sqlite`; new ones are starred. Add listings you find yourself to `config/seeds.txt`.
 
 Run it weekly with cron, e.g. `0 7 * * 1 cd ~/farmscout && farmscout run --limit 40`.
+
+## Sources
+
+| Source | Key | What it finds |
+| --- | --- | --- |
+| `claude` | `ANTHROPIC_API_KEY` | Open web search: land sites, brokerages, winery and venue brokers |
+| `portals` | `ANTHROPIC_API_KEY` | Search restricted to zillow.com, redfin.com and realtor.com |
+| `rentcast` | `RENTCAST_API_KEY` | [RentCast](https://developers.rentcast.io) licensed listings API: MLS for-sale listings filtered by state, price and lot size |
+| `redfin_csv` | none | Redfin "Download All" CSV exports dropped in `data/inbox/` |
+| `brave` | `BRAVE_API_KEY` | Brave Search API (optional) |
+| `seeds` | none | URLs you paste into `config/seeds.txt` |
+
+Default: `claude,portals,rentcast,redfin_csv,seeds`. A source whose key is missing is skipped with a warning.
+
+### Zillow and Redfin
+
+Zillow's terms of use prohibit automated queries and scraping, Redfin has no public API, and both block
+bots (including GitHub's runners). So farmscout does not crawl them. It covers their listings three ways:
+
+- **`portals`** finds Zillow, Redfin and Realtor.com listing pages through web search and scores them from
+  what the search returns (price, acres, location). Expect more "to verify" items than other sources.
+- **`rentcast`** pulls the same MLS listings from a licensed API. Each listing links to a web search for its
+  address, which usually lands on its Zillow or Redfin page. Check RentCast's plans for request limits; a
+  run uses about one request per state.
+- **`redfin_csv`** reads Redfin's own export. See `data/inbox/README.md`: save a search on redfin.com, click
+  **Download All**, and upload the CSV to `data/inbox/`. Pushing a CSV there starts a run.
+
+For new-listing alerts, Zillow and Redfin saved-search emails still work; paste interesting links into
+`config/seeds.txt`.
 
 ## Running on GitHub Actions
 
@@ -39,7 +69,7 @@ Three workflows live in `.github/workflows/`:
 One-time setup:
 
 1. **Settings → Secrets and variables → Actions → New repository secret:** `ANTHROPIC_API_KEY`
-   (optionally `BRAVE_API_KEY`).
+   and, if you use them, `RENTCAST_API_KEY` and `BRAVE_API_KEY`.
 2. **Settings → Pages → Build and deployment → Source:** *GitHub Actions*.
 3. **Actions → Scout properties → Run workflow** to do the first run (try `limit` = 10).
 
@@ -61,7 +91,7 @@ discover ──► dedupe ──► fetch ──► extract ──► enrich ─
 
 | Stage | Interface | Implementations |
 | --- | --- | --- |
-| Discover | `sources.base.ListingSource` | `ClaudeWebSearchSource`, `BraveSearchSource`, `SeedFileSource`, `CompositeSource` |
+| Discover | `sources.base.ListingSource` | `ClaudeWebSearchSource` (open web and portals), `RentCastSource`, `RedfinCsvSource`, `BraveSearchSource`, `SeedFileSource`, `CompositeSource` (factories in `app/container.py`) |
 | Fetch | `fetching.fetcher.PageFetcher` | `HttpPageFetcher` (robots.txt, per-host delay) |
 | Extract | `extraction.base.FactExtractor` | `LLMExtractor`, `HeuristicExtractor`, `LayeredExtractor` (LLM first, regex fills gaps / takes over on failure) |
 | Enrich | `enrichment.enrichers.Enricher` | `ZoningClassEnricher`, `DriveTimeEnricher`, `EnrichmentChain` |
@@ -120,8 +150,9 @@ and give it a weight in the config.
 ## Caveats
 
 - **Listing sites block scrapers.** Zillow, Redfin and others disallow bots in robots.txt, and the
-  fetcher respects that. For those, scoring falls back to the search snippet Claude returns, so expect
-  more "to verify" items. LandSearch, LandWatch, LoopNet and brokerage sites usually expose more.
+  fetcher respects that. For pages it can't read, scoring falls back to the search snippet, so expect
+  more "to verify" items. RentCast and Redfin CSV rows bring their own price, acreage and location.
+  LandSearch, LandWatch, LoopNet and brokerage sites usually expose more.
 - **Zoning from listings is unreliable.** Treat the zoning score as a lead. Confirm on the county GIS
   and planning code before an offer.
 - **Drive times are county-level estimates.** Edit `[drive_minutes]` to taste.

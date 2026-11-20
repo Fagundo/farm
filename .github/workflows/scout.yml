@@ -1,18 +1,23 @@
-# Weekly property search. Needs the ANTHROPIC_API_KEY repo secret (BRAVE_API_KEY optional).
+# Weekly property search. Repo secrets: ANTHROPIC_API_KEY (web + Zillow/Redfin/Realtor.com search),
+# RENTCAST_API_KEY (licensed MLS listings), BRAVE_API_KEY (optional). Sources without a key are skipped.
+# Also runs when a Redfin CSV export is pushed to data/inbox/.
 # Results (database + reports) are committed back to the repo, then the web page is republished.
 name: Scout properties
 
 on:
   schedule:
     - cron: "17 15 * * 1"   # Mondays 15:17 UTC (7:17 am Pacific in winter, 8:17 am in summer)
+  push:
+    branches: [main]
+    paths: ["data/inbox/**.csv"]
   workflow_dispatch:
     inputs:
       limit:
         description: Max properties to evaluate
         default: "40"
       sources:
-        description: "Comma list: claude, brave, seeds"
-        default: "claude,seeds"
+        description: "Comma list: claude, portals, rentcast, redfin_csv, brave, seeds"
+        default: "claude,portals,rentcast,redfin_csv,seeds"
       refresh:
         description: Re-score properties already seen
         type: boolean
@@ -43,13 +48,13 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
-          SOURCES: ${{ inputs.sources || 'claude,seeds' }}
+          RENTCAST_API_KEY: ${{ secrets.RENTCAST_API_KEY }}
+          SOURCES: ${{ inputs.sources || 'claude,portals,rentcast,redfin_csv,seeds' }}
           LIMIT: ${{ inputs.limit || '40' }}
           REFRESH: ${{ inputs.refresh && '--refresh' || '' }}
         run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::Add an ANTHROPIC_API_KEY secret under Settings > Secrets and variables > Actions"
-            exit 1
+          if [ -z "$ANTHROPIC_API_KEY$RENTCAST_API_KEY" ]; then
+            echo "::warning::No ANTHROPIC_API_KEY or RENTCAST_API_KEY secret set; only seeds and Redfin CSVs will be read"
           fi
           farmscout run --sources "$SOURCES" --limit "$LIMIT" $REFRESH | tee run.log
           {

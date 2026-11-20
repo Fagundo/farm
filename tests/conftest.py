@@ -47,8 +47,9 @@ class ScriptedLLM(LLMClient):
         self.replies = list(replies)
         self.calls: list[tuple[str, str, bool]] = []
 
-    def complete(self, system: str, user: str, *, web_search: bool = False) -> str:
+    def complete(self, system: str, user: str, *, web_search: bool = False, allowed_domains=()) -> str:
         self.calls.append((system, user, web_search))
+        self.domains = list(allowed_domains)
         return self.replies.pop(0)
 
 
