@@ -14,9 +14,10 @@ max_drive_minutes_to_home = 690
 # Listings with an unknown price/acreage/county are kept but flagged "verify".
 keep_unknowns = true
 
-# Vacant land: must be zoned for the use (commercial or conditional-use zoning; farm/forest-only
-# land is out) and priced to leave room to build within the overall budget.
+# Vacant land. Off: only properties with existing buildings (farms, venues, vineyards, lodges)
+# are kept. If switched on, land must be zoned for the use and priced to leave room to build.
 [land]
+include = false
 max_price_usd = 650_000
 
 # Acreage inside this range scores full points; 80-160 acres score partial points.
@@ -146,9 +147,9 @@ shortlist_threshold = 55
 [search]
 # Each run picks a random sample of (property type x place) combinations, so successive weekly
 # runs cover the grid. Each query is one Claude call with up to web_search_max_uses searches.
-max_queries = 100
-max_portal_queries = 60
-results_per_query = 15
+max_queries = 150
+max_portal_queries = 90
+results_per_query = 20
 property_types = [
   "winery with acreage for sale",
   "event venue with acreage for sale",
@@ -157,7 +158,7 @@ property_types = [
   "retreat center for sale",
   "farm with commercial kitchen for sale",
   "bed and breakfast on acreage for sale",
-  "rural commercial zoned acreage for sale",
+  "farm or ranch with buildings on rural commercial zoning for sale",
   "farm with river frontage for sale",
   "lodge on acreage for sale",
   "glamping or campground property for sale",
@@ -173,14 +174,20 @@ property_types = [
   "secluded retreat property with creek or river for sale",
   "cafe or restaurant on rural acreage for sale",
   "inn or guest lodge on acreage for sale",
-  "secluded acreage bordering national forest for sale",
-  # Vacant land zoned for the business
-  "rural commercial zoned land for sale",
-  "tourist commercial zoned land for sale",
-  "recreational or resort zoned land for sale",
-  "land approved for event venue or campground for sale",
-  "commercial acreage with river or creek frontage for sale",
-  "vacant land with well septic and power, commercial zoning, for sale",
+  "secluded farm or homestead bordering national forest for sale",
+  # Working farms, vineyards and homesteads with buildings to convert
+  "vineyard with house for sale",
+  "hobby farm with barn and house for sale",
+  "farmhouse with outbuildings on acreage for sale",
+  "horse property with barn and arena for sale",
+  "farm with guest cottage or ADU for sale",
+  "berry or Christmas tree farm with house for sale",
+  "homestead with shop and pasture for sale",
+  "orchard or cidery with tasting room for sale",
+  "pumpkin patch or corn maze farm for sale",
+  "farm with farm stand and house for sale",
+  "nursery or flower farm with house for sale",
+  "guest ranch or farm stay with cabins for sale",
 ]
 # Places to search. Each run samples (property type x place) combinations weighted toward places
 # close to home, so Seattle-area places come up far more often than Montana or California.
@@ -246,7 +253,8 @@ portal_property_types = [
   "horse property with arena", "wedding venue or event barn", "house on 10+ acres",
   "farm with guest house", "orchard or vineyard with house", "lodge or cabin compound",
   "secluded acreage with creek or river", "spa or retreat property on acreage",
-  "vacant land commercial or resort zoning 5+ acres", "land with power well and septic approved 5+ acres",
+  "vineyard with house", "hobby farm with barn and house", "farmhouse with outbuildings on acreage",
+  "bed and breakfast on acreage", "farm with guest cabins",
 ]
 # Domains to prefer when searching (sources may use this as an allow-list hint).
 listing_domains = [

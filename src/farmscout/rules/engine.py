@@ -65,6 +65,7 @@ def build_engine(settings: Settings) -> RuleEngine:
         hard.AcreageRule(hf),
         hard.ListingStatusRule(),
         hard.HomeDistanceRule(hf.max_drive_minutes_to_home, settings.home.name),
+        hard.VacantLandRule(settings.include_land),
         hard.LandZoningRule(),
         hard.LandPriceRule(settings.land_max_price_usd),
     ]

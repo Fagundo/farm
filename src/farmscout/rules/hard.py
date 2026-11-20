@@ -100,6 +100,23 @@ class HomeDistanceRule(HardRule):
         return self.failed(f"~{m / 60:.1f} h from {self._home} (limit {self._max / 60:.0f} h)")
 
 
+class VacantLandRule(HardRule):
+    """When vacant land is switched off in the config, only properties with existing buildings
+    (farms, venues, vineyards, lodges...) stay in the running."""
+
+    rule_id = "vacant_land"
+
+    def __init__(self, include_land: bool) -> None:
+        super().__init__()
+        self._include = include_land
+
+    def applies(self, facts: PropertyFacts) -> bool:
+        return not self._include and facts.is_land
+
+    def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
+        return self.failed("Vacant land: search is limited to existing farms, venues and vineyards")
+
+
 class LandZoningRule(HardRule):
     """Vacant land must be zoned so a venue/restaurant/sauna business can be permitted. Farm- or
     forest-only land has no existing use to grandfather, so it's out."""

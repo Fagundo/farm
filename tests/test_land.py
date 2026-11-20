@@ -1,9 +1,19 @@
 """Vacant land: zoned for the use, priced to leave room to build, scored on build readiness."""
 
+from dataclasses import replace
+
+import pytest
+
 from farmscout.domain.models import Status
 from farmscout.extraction.heuristic import HeuristicExtractor
 from farmscout.rules.engine import build_engine
 from tests.conftest import facts, listing
+
+
+@pytest.fixture
+def settings(settings):
+    """These tests cover land scoring, so switch vacant land on regardless of the config."""
+    return replace(settings, include_land=True)
 
 
 def _ev(settings, enricher, **kw):

@@ -78,3 +78,12 @@ def test_heuristic_finds_spa_and_setting():
     f = HeuristicExtractor().extract(RawListing(url="https://x/1"), text)
     assert {"spa", "bathhouse"} <= set(f.existing_uses)
     assert f.setting == "secluded"
+
+
+def test_vacant_land_excluded_when_switched_off(settings, enricher):
+    assert settings.include_land is False
+    ev = build_engine(settings).evaluate(enricher.enrich(facts(property_type="land", zoning="Rural Commercial")))
+    assert ev.disqualified
+    assert _by_id(ev)["vacant_land"].status is Status.FAIL
+    farm = build_engine(settings).evaluate(enricher.enrich(facts(has_barn=True, dwellings=1)))
+    assert _by_id(farm)["vacant_land"].status is Status.NOT_APPLICABLE

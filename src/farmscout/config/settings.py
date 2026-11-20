@@ -92,6 +92,7 @@ class Settings:
     search: SearchSettings
     llm: LLMSettings
     fetch: FetchSettings
+    include_land: bool = True
     business_uses: BusinessUseCatalog = field(default_factory=lambda: BusinessUseCatalog(DEFAULT_BUSINESS_USES))
     rentcast: RentCastSettings = RentCastSettings()
     redfin_csv_dir: Path = Path("data/inbox")
@@ -126,6 +127,7 @@ class Settings:
             counties=CountyTable.load(_resolve(raw["geo"]["counties_file"], source_path)),
             drive_model=DriveTimeModel(float(raw["geo"].get("road_factor", 1.2)), float(raw["geo"].get("mph", 60))),
             land_max_price_usd=raw.get("land", {}).get("max_price_usd"),
+            include_land=bool(raw.get("land", {}).get("include", True)),
             acreage_ideal=(
                 float(raw.get("acreage", {}).get("ideal_min", hf["min_acres"])),
                 float(raw.get("acreage", {}).get("ideal_max", hf["max_acres"])),
