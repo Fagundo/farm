@@ -24,15 +24,21 @@ class ZoningClassEnricher(Enricher):
 
 
 class DriveTimeEnricher(Enricher):
-    """Estimates drive minutes to Seattle/Portland from a county lookup table."""
+    """Estimates drive minutes to the nearest metro from a (state, county) lookup table.
 
-    def __init__(self, minutes_by_county: dict[str, int]) -> None:
-        self._table = {k.lower(): v for k, v in minutes_by_county.items()}
+    Keyed by state because county names repeat across states (Lincoln, Douglas, Columbia...).
+    """
+
+    def __init__(self, minutes: dict[str, dict[str, int]]) -> None:
+        self._table = {
+            st.upper(): {c.lower(): m for c, m in counties.items()} for st, counties in minutes.items()
+        }
 
     def enrich(self, facts: PropertyFacts) -> PropertyFacts:
-        if facts.drive_minutes_to_metro is not None or not facts.county:
+        if facts.drive_minutes_to_metro is not None or not facts.county or not facts.state:
             return facts
-        minutes = self._table.get(facts.county.lower().removesuffix(" county").strip())
+        county = facts.county.lower().removesuffix(" county").strip()
+        minutes = self._table.get(facts.state.upper(), {}).get(county)
         return replace(facts, drive_minutes_to_metro=minutes)
 
 

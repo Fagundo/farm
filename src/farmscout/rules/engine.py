@@ -42,6 +42,7 @@ SOFT_RULES: dict[str, type[Rule]] = {
     "commercial_kitchen": soft.CommercialKitchenRule,
     "extra_dwelling": soft.ExtraDwellingRule,
     "access": soft.AccessRule,
+    "acreage_fit": soft.AcreageFitRule,  # built with the ideal range in build_engine
 }
 
 PENALTY_RULES: dict[str, type[Rule]] = {
@@ -61,6 +62,9 @@ def build_engine(settings: Settings) -> RuleEngine:
         hard.ListingStatusRule(),
     ]
     for key, weight in settings.weights.items():
+        if key == "acreage_fit":
+            rules.append(soft.AcreageFitRule(weight, *settings.acreage_ideal))
+            continue
         if key not in SOFT_RULES:
             raise ValueError(f"Unknown weight '{key}' in config; known: {sorted(SOFT_RULES)}")
         rules.append(SOFT_RULES[key](weight))

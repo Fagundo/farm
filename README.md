@@ -142,7 +142,7 @@ src/farmscout/
 ## The rules
 
 **Hard filters** (fail = dropped; unknown = kept and flagged "to verify"):
-price ≤ $1M, 5–80 acres, WA (western counties ≤ ~2 h from Seattle) or western OR.
+price ≤ $1M, 2–160 acres, any county in WA or OR, or the Boise area and north Idaho, and not sold.
 
 **Soft score (0–100):**
 
@@ -152,11 +152,12 @@ price ≤ $1M, 5–80 acres, WA (western counties ≤ ~2 h from Seattle) or west
 | existing_approved_use | 15 | Winery, venue, restaurant, retreat, B&B, lodge, farm stand… |
 | water_supply | 10 | Water rights (well alone = 60%) |
 | plunge_water | 10 | Creek, river, pond, lake, shoreline, spring |
-| metro_proximity | 10 | ≤ 60 min to Seattle/Portland (county table) |
+| metro_proximity | 10 | ≤ 60 min to Seattle, Portland, Spokane or Boise (county table) |
 | convertible_buildings | 10 | Outbuilding ≥ 1,500 sq ft |
 | commercial_kitchen | 5 | Commercial kitchen |
 | extra_dwelling | 5 | 2+ dwellings |
 | access | 5 | Paved road |
+| acreage_fit | 5 | 5–80 acres (smaller or larger gets partial credit) |
 
 **Penalties:** floodplain −10, HOA −10, shared private road −5, farm/forest-only zoning with no
 existing venue use −15.
@@ -172,9 +173,14 @@ and give it a weight in the config.
   LandSearch, LandWatch, LoopNet and brokerage sites usually expose more.
 - **Zoning from listings is unreliable.** Treat the zoning score as a lead. Confirm on the county GIS
   and planning code before an offer.
-- **Drive times are county-level estimates.** Edit `[drive_minutes]` to taste.
-- **Cost:** each Claude search query uses up to `web_search_max_uses` searches plus tokens. 40 queries
-  plus 40 extractions is a modest bill, but use `--limit` while tuning.
+- **Drive times are county-level estimates.** Edit `[regions.<STATE>.drive_minutes]` to taste; a county
+  must be listed there to be in range.
+- **Changing the criteria re-scores everything.** `farmscout report` (and every run) re-evaluates saved
+  properties against the current config, so edits show up on the page at the next publish.
+- **Cost:** each query is one Claude call with up to `web_search_max_uses` web searches. A default run is
+  100 open-web + 60 portal queries, plus extraction for new listings and research on the top 15. Lower
+  `max_queries` / `max_portal_queries` in the config, or pass `--limit`, to spend less. Each run samples a
+  different slice of the ~700 type × place combinations, so a few weekly runs cover them all.
 - The model and web-search tool versions are set in `config/criteria.toml` and
   `llm/anthropic_client.py`; update them if the API changes.
 

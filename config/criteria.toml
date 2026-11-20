@@ -1,63 +1,116 @@
 # farmscout criteria — the single place to tune what counts as a good property.
 # Target: agriculture + sauna + event space / farm-to-table, Pacific Northwest, <= $1M.
+# Area: all of WA and OR, plus the Boise area and north Idaho.
 
 [hard_filters]
 max_price_usd = 1_000_000
-min_acres = 5
-max_acres = 80
-allowed_states = ["WA", "OR"]
+min_acres = 2
+max_acres = 160
+allowed_states = ["WA", "OR", "ID"]
 # Listings with an unknown price/acreage/county are kept but flagged "verify".
 keep_unknowns = true
 
-# Western WA counties within ~2 hours of Seattle, and western Oregon.
-[regions.WA]
-counties = [
-  "King", "Snohomish", "Pierce", "Kitsap", "Skagit", "Island", "San Juan",
-  "Whatcom", "Jefferson", "Mason", "Thurston", "Lewis", "Grays Harbor", "Clallam",
-]
-[regions.OR]
-counties = [
-  "Multnomah", "Washington", "Clackamas", "Columbia", "Yamhill", "Polk", "Marion",
-  "Linn", "Benton", "Lane", "Clatsop", "Tillamook", "Lincoln", "Hood River",
-  "Douglas", "Coos", "Curry", "Josephine", "Jackson",
-]
+# Acreage inside this range scores full points; 2-5 and 80-160 acres score partial points.
+[acreage]
+ideal_min = 5
+ideal_max = 80
 
-# Approximate one-way drive minutes from each county's population center to the
-# nearest metro (Seattle or Portland). Used by the proximity rule. Edit freely.
-[drive_minutes]
-King = 40
-Snohomish = 45
-Pierce = 50
-Kitsap = 75
-Skagit = 75
-Island = 90
-"San Juan" = 180
-Whatcom = 105
-Jefferson = 120
-Mason = 95
-Thurston = 65
-Lewis = 100
-"Grays Harbor" = 120
+# Counties in the search area, per state, with approximate one-way drive minutes from the
+# county's population center to the nearest metro (Seattle, Portland, Spokane or Boise).
+# A county must be listed here to be in range. Edit freely; estimates are rough.
+[regions.WA.drive_minutes]
+Adams = 90
+Asotin = 150
+Benton = 150
+Chelan = 140
 Clallam = 150
-Multnomah = 20
-Washington = 30
-Clackamas = 35
-Columbia = 50
-Yamhill = 60
-Polk = 80
-Marion = 60
-Linn = 90
+Clark = 20
+Columbia = 150
+Cowlitz = 50
+Douglas = 150
+Ferry = 135
+Franklin = 140
+Garfield = 150
+Grant = 120
+"Grays Harbor" = 120
+Island = 90
+Jefferson = 120
+King = 40
+Kitsap = 75
+Kittitas = 100
+Klickitat = 100
+Lewis = 100
+Lincoln = 50
+Mason = 95
+Okanogan = 210
+Pacific = 140
+"Pend Oreille" = 75
+Pierce = 50
+"San Juan" = 180
+Skagit = 75
+Skamania = 60
+Snohomish = 45
+Spokane = 20
+Stevens = 60
+Thurston = 65
+Wahkiakum = 90
+"Walla Walla" = 180
+Whatcom = 105
+Whitman = 75
+Yakima = 140
+
+[regions.OR.drive_minutes]
+Baker = 130
 Benton = 100
-Lane = 120
+Clackamas = 35
 Clatsop = 120
-Tillamook = 110
-Lincoln = 140
-"Hood River" = 75
-Douglas = 210
+Columbia = 50
 Coos = 240
+Crook = 200
 Curry = 300
-Josephine = 270
+Deschutes = 180
+Douglas = 210
+Gilliam = 150
+Grant = 240
+Harney = 200
+"Hood River" = 75
 Jackson = 290
+Jefferson = 150
+Josephine = 270
+Klamath = 270
+Lake = 300
+Lane = 120
+Lincoln = 140
+Linn = 90
+Malheur = 60
+Marion = 60
+Morrow = 180
+Multnomah = 20
+Polk = 80
+Sherman = 120
+Tillamook = 110
+Umatilla = 180
+Union = 180
+Wallowa = 240
+Wasco = 90
+Washington = 30
+Wheeler = 210
+Yamhill = 60
+
+[regions.ID.drive_minutes]
+Ada = 15
+Benewah = 75
+Boise = 60
+Bonner = 90
+Boundary = 120
+Canyon = 30
+Elmore = 50
+Gem = 45
+Kootenai = 40
+Latah = 90
+"Nez Perce" = 120
+Shoshone = 80
+Valley = 120
 
 # Zoning classes, checked in this order; first regex match wins (case-insensitive).
 # "commercial" = restaurant/venue plausible; "mixed" = conditional uses likely;
@@ -86,7 +139,7 @@ patterns = [
   'agri-?business', '\bAB\b', '\bRDD\b',
 ]
 
-# Soft rules: points toward a 0-100 fit score. Weights should sum to ~100.
+# Soft rules: points toward the fit score. The total is scaled to 0-100, so weights are relative.
 [weights]
 commercial_pathway = 30
 existing_approved_use = 15
@@ -97,6 +150,7 @@ convertible_buildings = 10
 commercial_kitchen = 5
 extra_dwelling = 5
 access = 5
+acreage_fit = 5
 
 # Red flags subtract points.
 [penalties]
@@ -110,24 +164,45 @@ farm_only_no_existing_use = 15
 shortlist_threshold = 55
 
 [search]
-max_queries = 40
-results_per_query = 10
+# Each run picks a random sample of (property type x place) combinations, so successive weekly
+# runs cover the whole grid. Each query is one Claude call with up to web_search_max_uses searches.
+max_queries = 100
+max_portal_queries = 60
+results_per_query = 15
 property_types = [
   "winery with acreage for sale",
   "event venue with acreage for sale",
   "wedding venue farm for sale",
+  "farm with event barn for sale",
   "retreat center for sale",
   "farm with commercial kitchen for sale",
   "bed and breakfast on acreage for sale",
   "rural commercial zoned acreage for sale",
   "farm with river frontage for sale",
   "lodge on acreage for sale",
+  "glamping or campground property for sale",
+  "hot springs property for sale",
+  "orchard with farm stand for sale",
+  "lavender or flower farm for sale",
+  "u-pick farm for sale",
+  "farm stay or agritourism property for sale",
+  "former restaurant on acreage for sale",
 ]
 places = [
+  # Western Washington
   "Skagit County WA", "Snohomish County WA", "Whatcom County WA", "Kitsap Peninsula WA",
-  "Olympic Peninsula WA", "Whidbey Island WA", "Thurston County WA", "Enumclaw WA",
-  "Willamette Valley OR", "Yamhill County OR", "Columbia River Gorge OR", "Oregon Coast",
-  "Clackamas County OR", "Southern Oregon",
+  "Olympic Peninsula WA", "Sequim WA", "Whidbey Island WA", "San Juan Islands WA",
+  "Thurston County WA", "Enumclaw WA", "Snoqualmie Valley WA", "Lewis County WA",
+  "Long Beach Peninsula WA", "Clark County WA", "Cowlitz County WA",
+  # Eastern Washington
+  "Leavenworth WA", "Lake Chelan WA", "Methow Valley WA", "Cle Elum Roslyn WA", "Ellensburg WA",
+  "Yakima Valley WA", "Walla Walla WA", "White Salmon Klickitat County WA", "Spokane County WA",
+  # Oregon
+  "Willamette Valley OR", "Yamhill County OR", "Hood River OR", "Columbia River Gorge OR",
+  "Oregon Coast", "Tillamook County OR", "Clackamas County OR", "Silverton OR", "Eugene OR",
+  "McKenzie River OR", "Bend Sisters OR", "Rogue Valley Ashland OR", "Southern Oregon",
+  # Idaho
+  "Sandpoint ID", "Coeur d'Alene ID", "McCall ID", "Boise foothills ID",
 ]
 # "portals" source: Claude web search restricted to these sites (finds their indexed
 # listing pages through search; never crawls the sites themselves).
@@ -135,6 +210,7 @@ portal_domains = ["zillow.com", "redfin.com", "realtor.com"]
 portal_property_types = [
   "farm with barn and acreage", "acreage with large shop", "riverfront or creekfront acreage",
   "horse property with arena", "wedding venue or event barn", "house on 10+ acres",
+  "farm with guest house", "orchard or vineyard with house", "lodge or cabin compound",
 ]
 # Domains to prefer when searching (sources may use this as an allow-list hint).
 listing_domains = [
@@ -145,8 +221,8 @@ listing_domains = [
 
 [rentcast]
 # Licensed MLS listings API (RENTCAST_API_KEY). One request per state returns up to 500.
-states = ["WA", "OR"]
-max_pages_per_state = 2
+states = ["WA", "OR", "ID"]
+max_pages_per_state = 4
 
 [inbox]
 # Drop Redfin "Download All" CSV exports here.
