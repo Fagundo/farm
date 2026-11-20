@@ -1,0 +1,104 @@
+"""Core domain types. Pure data: no I/O, no dependencies on other layers."""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field, fields
+from enum import Enum
+from typing import Any
+
+
+@dataclass(frozen=True)
+class RawListing:
+    """A lead discovered by a source, before any page fetch or extraction."""
+
+    url: str
+    title: str = ""
+    snippet: str = ""
+    source: str = ""
+
+
+@dataclass
+class PropertyFacts:
+    """Structured facts about a property. ``None`` always means *unknown*."""
+
+    url: str
+    title: str = ""
+    source: str = ""
+    price_usd: int | None = None
+    acres: float | None = None
+    state: str | None = None
+    county: str | None = None
+    city: str | None = None
+    zoning: str | None = None
+    zoning_class: str | None = None
+    existing_uses: list[str] = field(default_factory=list)
+    has_water_rights: bool | None = None
+    has_well: bool | None = None
+    water_features: list[str] = field(default_factory=list)
+    has_commercial_kitchen: bool | None = None
+    dwellings: int | None = None
+    has_barn: bool | None = None
+    largest_outbuilding_sqft: int | None = None
+    road_access: str | None = None  # "paved" | "gravel" | "shared_private"
+    in_floodplain: bool | None = None
+    has_hoa: bool | None = None
+    drive_minutes_to_metro: int | None = None
+    summary: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PropertyFacts":
+        known = {f.name for f in fields(cls)}
+        return cls(**{k: v for k, v in data.items() if k in known})
+
+    def merged_with(self, fallback: "PropertyFacts") -> "PropertyFacts":
+        """Return a copy where unknown/empty fields are filled from ``fallback``."""
+        merged = {}
+        for f in fields(self):
+            mine, theirs = getattr(self, f.name), getattr(fallback, f.name)
+            empty = mine is None or mine == "" or mine == []
+            if isinstance(mine, list) and isinstance(theirs, list):
+                merged[f.name] = sorted(set(mine) | set(theirs))
+            else:
+                merged[f.name] = theirs if empty else mine
+        return PropertyFacts(**merged)
+
+
+class Status(str, Enum):
+    PASS = "pass"
+    PARTIAL = "partial"
+    FAIL = "fail"
+    UNKNOWN = "unknown"
+
+
+@dataclass(frozen=True)
+class RuleOutcome:
+    rule_id: str
+    status: Status
+    points: float
+    max_points: float
+    reason: str
+    hard: bool = False
+    penalty: bool = False
+
+
+@dataclass
+class Evaluation:
+    facts: PropertyFacts
+    outcomes: list[RuleOutcome]
+    score: float
+    disqualified: bool
+
+    @property
+    def strengths(self) -> list[str]:
+        return [o.reason for o in self.outcomes if o.status is Status.PASS and not o.penalty and not o.hard]
+
+    @property
+    def red_flags(self) -> list[str]:
+        return [o.reason for o in self.outcomes if (o.penalty and o.points < 0) or (o.hard and o.status is Status.FAIL)]
+
+    @property
+    def to_verify(self) -> list[str]:
+        return [o.reason for o in self.outcomes if o.status is Status.UNKNOWN]

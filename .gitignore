@@ -1,0 +1,7 @@
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+# Generated on every run; GitHub Pages builds it from the database.
+site/
+# The database and reports ARE committed so scheduled runs remember what they've seen.

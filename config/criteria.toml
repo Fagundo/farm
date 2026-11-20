@@ -1,0 +1,149 @@
+# farmscout criteria — the single place to tune what counts as a good property.
+# Target: agriculture + sauna + event space / farm-to-table, Pacific Northwest, <= $1M.
+
+[hard_filters]
+max_price_usd = 1_000_000
+min_acres = 5
+max_acres = 80
+allowed_states = ["WA", "OR"]
+# Listings with an unknown price/acreage/county are kept but flagged "verify".
+keep_unknowns = true
+
+# Western WA counties within ~2 hours of Seattle, and western Oregon.
+[regions.WA]
+counties = [
+  "King", "Snohomish", "Pierce", "Kitsap", "Skagit", "Island", "San Juan",
+  "Whatcom", "Jefferson", "Mason", "Thurston", "Lewis", "Grays Harbor", "Clallam",
+]
+[regions.OR]
+counties = [
+  "Multnomah", "Washington", "Clackamas", "Columbia", "Yamhill", "Polk", "Marion",
+  "Linn", "Benton", "Lane", "Clatsop", "Tillamook", "Lincoln", "Hood River",
+  "Douglas", "Coos", "Curry", "Josephine", "Jackson",
+]
+
+# Approximate one-way drive minutes from each county's population center to the
+# nearest metro (Seattle or Portland). Used by the proximity rule. Edit freely.
+[drive_minutes]
+King = 40
+Snohomish = 45
+Pierce = 50
+Kitsap = 75
+Skagit = 75
+Island = 90
+"San Juan" = 180
+Whatcom = 105
+Jefferson = 120
+Mason = 95
+Thurston = 65
+Lewis = 100
+"Grays Harbor" = 120
+Clallam = 150
+Multnomah = 20
+Washington = 30
+Clackamas = 35
+Columbia = 50
+Yamhill = 60
+Polk = 80
+Marion = 60
+Linn = 90
+Benton = 100
+Lane = 120
+Clatsop = 120
+Tillamook = 110
+Lincoln = 140
+"Hood River" = 75
+Douglas = 210
+Coos = 240
+Curry = 300
+Josephine = 270
+Jackson = 290
+
+# Zoning classes, checked in this order; first regex match wins (case-insensitive).
+# "commercial" = restaurant/venue plausible; "mixed" = conditional uses likely;
+# "farm_only"/"forest_only" = farming yes, venue/restaurant hard.
+[[zoning.classes]]
+name = "commercial"
+patterns = [
+  'rural commercial', 'tourist commercial', 'rural business', 'rural activity center',
+  'lamird', 'rural village', 'resort', 'recreation(al)? commercial',
+  '\bRC\b', '\bCR\b', '\bC-\d', '\bRB\b', '\bNC\b', 'commercial(?! ag)',
+]
+[[zoning.classes]]
+name = "farm_only"
+patterns = [
+  'exclusive farm use', '\bEFU\b', '\bEF-?\d+', 'agricultural production district', '\bAPD\b',
+  'commercial ag', 'ag-?nrl', 'rural resource', '-NRL\b', '\bFF\b', 'agricultural resource', '\bA-?10\b', '\bA-?20\b',
+]
+[[zoning.classes]]
+name = "forest_only"
+patterns = ['\bF-?\d+', 'commercial forest', 'timber', 'forest resource']
+[[zoning.classes]]
+name = "mixed"
+patterns = [
+  '\bAF-?\d+', 'farm/forest', 'rural residential', '\bRR-?\d*', '\bRA-?\d+', '\bR-?5\b',
+  '\bR-?10\b', 'rural agricultur', 'rural \d+', 'agricultural/residential', '\bAR-?\d*',
+  'agri-?business', '\bAB\b', '\bRDD\b',
+]
+
+# Soft rules: points toward a 0-100 fit score. Weights should sum to ~100.
+[weights]
+commercial_pathway = 30
+existing_approved_use = 15
+water_supply = 10
+plunge_water = 10
+metro_proximity = 10
+convertible_buildings = 10
+commercial_kitchen = 5
+extra_dwelling = 5
+access = 5
+
+# Red flags subtract points.
+[penalties]
+floodplain = 10
+hoa = 10
+shared_private_road = 5
+farm_only_no_existing_use = 15
+
+[scoring]
+# Score at or above this is a "shortlist" candidate in reports.
+shortlist_threshold = 55
+
+[search]
+max_queries = 40
+results_per_query = 10
+property_types = [
+  "winery with acreage for sale",
+  "event venue with acreage for sale",
+  "wedding venue farm for sale",
+  "retreat center for sale",
+  "farm with commercial kitchen for sale",
+  "bed and breakfast on acreage for sale",
+  "rural commercial zoned acreage for sale",
+  "farm with river frontage for sale",
+  "lodge on acreage for sale",
+]
+places = [
+  "Skagit County WA", "Snohomish County WA", "Whatcom County WA", "Kitsap Peninsula WA",
+  "Olympic Peninsula WA", "Whidbey Island WA", "Thurston County WA", "Enumclaw WA",
+  "Willamette Valley OR", "Yamhill County OR", "Columbia River Gorge OR", "Oregon Coast",
+  "Clackamas County OR", "Southern Oregon",
+]
+# Domains to prefer when searching (sources may use this as an allow-list hint).
+listing_domains = [
+  "landsearch.com", "landwatch.com", "land.com", "farmandranch.com", "loopnet.com",
+  "crexi.com", "zillow.com", "redfin.com", "realtor.com", "compass.com", "windermere.com",
+  "johnlscott.com", "bhhsnw.com", "coldwellbankerhomes.com",
+]
+
+[llm]
+model = "claude-sonnet-5-5"
+max_tokens = 4096
+web_search_max_uses = 5
+
+[fetch]
+user_agent = "farmscout/0.1 (personal property research)"
+respect_robots = true
+delay_seconds = 2.0
+timeout_seconds = 20
+max_chars = 20000

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farm &amp; Venue Property Scout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: one column of ranked property rows under a sticky filter bar; summary tiles first. */
+:root {
+  --bg: #f3f5f2;
+  --surface: #ffffff;
+  --ink: #18221d;
+  --muted: #5d6b63;
+  --line: #d9e0db;
+  --accent: #2c5f4a;          /* Douglas-fir green */
+  --accent-soft: #e2ede7;
+  --good: #23764b;  --good-bg: #e3f3ea;
+  --warn: #9a6a00;  --warn-bg: #fbf1d9;
+  --bad: #a3392e;   --bad-bg: #f9e5e2;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111814; --surface: #18211c; --ink: #e5ece7; --muted: #9aa9a0; --line: #2b3830;
+    --accent: #7fc4a2; --accent-soft: #20342a;
+    --good: #7fd3a3; --good-bg: #1c3427; --warn: #e5bd5c; --warn-bg: #3a3018; --bad: #f09a8f; --bad-bg: #3d221f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111814; --surface: #18211c; --ink: #e5ece7; --muted: #9aa9a0; --line: #2b3830;
+  --accent: #7fc4a2; --accent-soft: #20342a;
+  --good: #7fd3a3; --good-bg: #1c3427; --warn: #e5bd5c; --warn-bg: #3a3018; --bad: #f09a8f; --bad-bg: #3d221f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 64px; display: grid; gap: 20px; }
+header h1 { font: 700 30px/1.1 var(--font-display); margin: 0 0 6px; text-wrap: balance; letter-spacing: -0.01em; }
+header p { margin: 0; color: var(--muted); max-width: 70ch; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.tile b { display: block; font: 700 26px/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+.tile span { color: var(--muted); font-size: 13px; }
+.filters { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 10px 0; border-bottom: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.filters label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.filters input[type=search], .filters select { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+.filters input[type=search] { min-width: 200px; }
+.filters input[type=range] { accent-color: var(--accent); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13px; border: 0; background: var(--surface); color: var(--ink); padding: 6px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.count { margin-left: auto; font-size: 13px; color: var(--muted); }
+.list { display: grid; gap: 12px; }
+.row { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+  display: grid; grid-template-columns: 64px 1fr auto; gap: 4px 16px; align-items: start; }
+.row.dq { opacity: .6; }
+.score { grid-row: span 3; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+  font: 700 20px var(--font-display); font-variant-numeric: tabular-nums; border: 4px solid var(--line); }
+.score.hi { border-color: var(--good); color: var(--good); }
+.score.mid { border-color: var(--warn); color: var(--warn); }
+.score.lo { border-color: var(--line); color: var(--muted); }
+.title { font: 600 18px/1.25 var(--font-display); margin: 0; text-wrap: balance; }
+.title a { color: var(--ink); text-decoration: none; }
+.title a:hover { text-decoration: underline; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.meta b { color: var(--ink); font-weight: 600; }
+.star { font-size: 22px; line-height: 1; background: none; border: 0; cursor: pointer; color: var(--line); padding: 4px; }
+.star[aria-pressed="true"] { color: var(--warn); }
+.meta, .chips { grid-column: 2 / 4; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.chip.new { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
+.chip.dq { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
+.chip.z-commercial { background: var(--good-bg); color: var(--good); }
+.chip.z-farm_only, .chip.z-forest_only { background: var(--bad-bg); color: var(--bad); }
+.chip.z-mixed { background: var(--warn-bg); color: var(--warn); }
+.summary { grid-column: 2 / 4; margin: 2px 0 0; max-width: 75ch; }
+.notes { grid-column: 2 / 4; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 16px; font-size: 13px; }
+.notes h3 { font: 600 12px var(--font-display); text-transform: uppercase; letter-spacing: .05em; margin: 4px 0 2px; }
+.notes ul { margin: 0; padding-left: 16px; }
+.notes .good h3 { color: var(--good); } .notes .bad h3 { color: var(--bad); } .notes .warn h3 { color: var(--warn); }
+.empty { padding: 32px; text-align: center; color: var(--muted); background: var(--surface); border-radius: 10px; border: 1px dashed var(--line); }
+footer { color: var(--muted); font-size: 13px; }
+@media (max-width: 560px) {
+  .row { grid-template-columns: 48px 1fr; }
+  .score { width: 44px; height: 44px; font-size: 16px; border-width: 3px; grid-row: span 1; }
+  .star { grid-column: 2; justify-self: start; }
+  .meta, .chips, .summary, .notes { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Farm &amp; Venue Property Scout</h1>
+    <p id="intro"></p>
+  </header>
+
+  <section class="tiles" aria-label="Summary" id="tiles"></section>
+
+  <section class="filters" aria-label="Filters">
+    <input type="search" id="q" placeholder="Search town, county, feature…" aria-label="Search">
+    <div class="seg" role="group" aria-label="State" id="state">
+      <button type="button" data-v="" aria-pressed="true">All</button>
+      <button type="button" data-v="WA" aria-pressed="false">WA</button>
+      <button type="button" data-v="OR" aria-pressed="false">OR</button>
+    </div>
+    <label for="minScore">Min score <input type="range" id="minScore" min="0" max="100" step="5" value="0"> <output id="minScoreOut">0</output></label>
+    <label for="sort">Sort
+      <select id="sort">
+        <option value="score">Best fit</option>
+        <option value="price">Lowest price</option>
+        <option value="acres">Most acres</option>
+        <option value="drive">Closest to a city</option>
+      </select>
+    </label>
+    <label for="starred"><input type="checkbox" id="starred"> Starred</label>
+    <label for="showDq"><input type="checkbox" id="showDq"> Show ruled out</label>
+    <span class="count" id="count" aria-live="polite"></span>
+  </section>
+
+  <section class="list" id="list" aria-label="Properties"></section>
+
+  <footer id="footer"></footer>
+</div>
+
+<script type="application/json" id="data">__FARMSCOUT_DATA__</script>
+<script>
+(function () {
+  "use strict";
+  var DATA = JSON.parse(document.getElementById("data").textContent);
+  var rows = DATA.candidates;
+  var state = { q: "", st: "", min: 0, sort: "score", starred: false, dq: false };
+
+  var STAR_KEY = "farmscout-stars";
+  var stars = {};
+  try { stars = JSON.parse(localStorage.getItem(STAR_KEY) || "{}"); } catch (e) { stars = {}; }
+  function saveStars() { try { localStorage.setItem(STAR_KEY, JSON.stringify(stars)); } catch (e) {} }
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function money(n) { return n == null ? "Price ?" : "$" + Number(n).toLocaleString("en-US"); }
+  function band(s) { return s >= DATA.threshold ? "hi" : s >= DATA.threshold * 0.6 ? "mid" : "lo"; }
+  var ZLABEL = { commercial: "Commercial zoning", mixed: "Mixed / conditional", farm_only: "Farm-only zoning",
+                 forest_only: "Forest zoning", other: "Zoning: check code" };
+
+  function intro() {
+    var d = new Date(DATA.generated);
+    $("intro").textContent = "Pacific Northwest properties that could hold a farm, a sauna and an event space or farm-to-table dinners, scored 0–100 against the search rules. Updated " +
+      d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) + ".";
+    var ok = rows.filter(function (r) { return !r.disqualified; });
+    var short = ok.filter(function (r) { return r.score >= DATA.threshold; });
+    var fresh = ok.filter(function (r) { return r.new; });
+    var prices = ok.map(function (r) { return r.price_usd; }).filter(Boolean).sort(function (a, b) { return a - b; });
+    var median = prices.length ? prices[Math.floor(prices.length / 2)] : null;
+    $("tiles").innerHTML = [
+      [ok.length, "properties in range"],
+      [short.length, "on the shortlist (" + DATA.threshold + "+)"],
+      [fresh.length, "new this run"],
+      [median ? "$" + Math.round(median / 1000) + "k" : "–", "median asking price"]
+    ].map(function (t) { return '<div class="tile"><b>' + esc(t[0]) + "</b><span>" + esc(t[1]) + "</span></div>"; }).join("");
+    $("footer").innerHTML = "Scores reward zoning or existing permits that allow events (30 pts), an operating venue or winery (15), water rights, a creek or river for a cold plunge, " +
+      "drive time, big outbuildings, a commercial kitchen, a second home and road access. Missing details score zero and appear under <i>To verify</i>. " +
+      "Listings are as advertised; confirm zoning with the county before relying on a score. Stars are saved in this browser only.";
+  }
+
+  function matches(r) {
+    if (!state.dq && r.disqualified) return false;
+    if (state.st && r.state !== state.st) return false;
+    if (r.score < state.min) return false;
+    if (state.starred && !stars[r.url]) return false;
+    if (state.q) {
+      var hay = [r.title, r.city, r.county, r.state, r.zoning, r.summary, (r.existing_uses || []).join(" "),
+                 (r.water_features || []).join(" ")].join(" ").toLowerCase();
+      if (hay.indexOf(state.q) === -1) return false;
+    }
+    return true;
+  }
+
+  var SORTS = {
+    score: function (a, b) { return b.score - a.score; },
+    price: function (a, b) { return (a.price_usd || 9e9) - (b.price_usd || 9e9); },
+    acres: function (a, b) { return (b.acres || 0) - (a.acres || 0); },
+    drive: function (a, b) { return (a.drive_minutes_to_metro || 999) - (b.drive_minutes_to_metro || 999); }
+  };
+
+  function list(items, cls, title) {
+    if (!items || !items.length) return "";
+    return '<div class="' + cls + '"><h3>' + title + "</h3><ul>" +
+      items.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>";
+  }
+
+  function render() {
+    var shown = rows.filter(matches).sort(SORTS[state.sort]);
+    $("count").textContent = shown.length + " of " + rows.length + " shown";
+    if (!shown.length) { $("list").innerHTML = '<div class="empty">No properties match these filters. Lower the minimum score or clear the search.</div>'; return; }
+    $("list").innerHTML = shown.map(function (r) {
+      var loc = [r.city, r.county && r.county + " Co.", r.state].filter(Boolean).join(", ");
+      var meta = ["<b>" + money(r.price_usd) + "</b>",
+                  r.acres != null ? "<b>" + r.acres + "</b> acres" : "Acres ?",
+                  esc(loc || "Location ?"),
+                  r.drive_minutes_to_metro != null ? "~" + r.drive_minutes_to_metro + " min to Seattle/Portland" : ""].filter(Boolean);
+      var chips = [];
+      if (r.disqualified) chips.push('<span class="chip dq">Ruled out</span>');
+      if (r.new) chips.push('<span class="chip new">New</span>');
+      if (r.zoning_class) chips.push('<span class="chip z-' + esc(r.zoning_class) + '">' + esc(ZLABEL[r.zoning_class] || r.zoning_class) + (r.zoning ? " · " + esc(r.zoning) : "") + "</span>");
+      (r.existing_uses || []).forEach(function (u) { chips.push('<span class="chip">' + esc(u) + "</span>"); });
+      (r.water_features || []).forEach(function (w) { chips.push('<span class="chip">' + esc(w) + "</span>"); });
+      return '<article class="row' + (r.disqualified ? " dq" : "") + '">' +
+        '<div class="score ' + band(r.score) + '" aria-label="Score ' + Math.round(r.score) + ' of 100">' + Math.round(r.score) + "</div>" +
+        '<h2 class="title"><a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.title || r.url) + "</a></h2>" +
+        '<button type="button" class="star" data-url="' + esc(r.url) + '" aria-pressed="' + (!!stars[r.url]) + '" aria-label="Star this property">★</button>' +
+        '<div class="meta">' + meta.map(function (m) { return "<span>" + m + "</span>"; }).join("") + "</div>" +
+        '<div class="chips">' + chips.join("") + "</div>" +
+        (r.summary ? '<p class="summary">' + esc(r.summary) + "</p>" : "") +
+        '<div class="notes">' + list(r.strengths, "good", "Strengths") + list(r.red_flags, "bad", "Red flags") + list(r.to_verify, "warn", "To verify") + "</div>" +
+        "</article>";
+    }).join("");
+  }
+
+  $("q").addEventListener("input", function (e) { state.q = e.target.value.trim().toLowerCase(); render(); });
+  $("minScore").addEventListener("input", function (e) { state.min = +e.target.value; $("minScoreOut").textContent = e.target.value; render(); });
+  $("sort").addEventListener("change", function (e) { state.sort = e.target.value; render(); });
+  $("starred").addEventListener("change", function (e) { state.starred = e.target.checked; render(); });
+  $("showDq").addEventListener("change", function (e) { state.dq = e.target.checked; render(); });
+  $("state").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    state.st = b.dataset.v;
+    Array.prototype.forEach.call(this.children, function (c) { c.setAttribute("aria-pressed", String(c === b)); });
+    render();
+  });
+  $("list").addEventListener("click", function (e) {
+    var b = e.target.closest(".star"); if (!b) return;
+    var u = b.dataset.url;
+    if (stars[u]) delete stars[u]; else stars[u] = 1;
+    saveStars();
+    b.setAttribute("aria-pressed", String(!!stars[u]));
+    if (state.starred) render();
+  });
+
+  intro();
+  render();
+})();
+</script>
+</body>
+</html>
