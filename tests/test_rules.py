@@ -80,10 +80,51 @@ def test_acreage_fit_partial_outside_ideal(settings, enricher):
 
 
 def test_drive_time_is_keyed_by_state(enricher):
-    assert enricher.enrich(facts(state="WA", county="Lincoln")).drive_minutes_to_metro == 50
-    assert enricher.enrich(facts(state="OR", county="Lincoln")).drive_minutes_to_metro == 140
+    wa = enricher.enrich(facts(state="WA", county="Lincoln"))
+    ore = enricher.enrich(facts(state="OR", county="Lincoln"))
+    assert wa.nearest_metro == "Spokane" and ore.nearest_metro == "Portland"
+    assert wa.drive_minutes_to_home < ore.drive_minutes_to_home
+
+
+def test_drive_time_calibration(enricher):
+    hours = lambda st, c: enricher.enrich(facts(state=st, county=c)).drive_minutes_to_home / 60
+    assert hours("WA", "King") < 1 and 1 < hours("WA", "Skagit") < 1.5
+    assert 2.5 < hours("WA", "San Juan") < 4      # ferry penalty
+    assert 4 < hours("WA", "Spokane") < 5
+    assert 6.5 < hours("MT", "Missoula") < 8.5
+
+
+def test_property_coordinates_beat_county(enricher):
+    f = enricher.enrich(facts(state="WA", county="King", latitude=47.61, longitude=-122.33))
+    assert f.drive_minutes_to_home <= 5
+
+
+def test_home_proximity_favors_seattle(settings, enricher):
+    engine = build_engine(settings)
+    near = engine.evaluate(enricher.enrich(facts(state="WA", county="Skagit")))
+    far = engine.evaluate(enricher.enrich(facts(state="MT", county="Flathead")))
+    assert near.score > far.score
+    assert _by_id(near)["home_proximity"].status is Status.PASS
+    assert _by_id(far)["home_proximity"].status is Status.PARTIAL
+
+
+def test_too_far_from_home_is_out(settings, enricher):
+    ev = build_engine(settings).evaluate(enricher.enrich(facts(state="MT", county="Gallatin", price_usd=500_000)))
+    assert not ev.disqualified or any("from Seattle" in r for r in ev.red_flags)
+    far = facts(state="CA", county="Shasta", latitude=36.0, longitude=-119.0)
+    assert build_engine(settings).evaluate(enricher.enrich(far)).disqualified
 
 
 def test_idaho_in_range(settings, enricher):
     ev = build_engine(settings).evaluate(enricher.enrich(facts(state="ID", county="Bonner")))
     assert not ev.disqualified
+
+
+def test_query_sampling_favors_places_near_home(settings):
+    from farmscout.app.container import build_query_builder
+    near = far = 0
+    for seed in range(20):
+        for q in build_query_builder(settings, seed=seed).build():
+            near += " WA " in q
+            far += " MT " in q or " CA " in q
+    assert near > 5 * far > 0

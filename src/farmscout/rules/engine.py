@@ -43,6 +43,7 @@ SOFT_RULES: dict[str, type[Rule]] = {
     "extra_dwelling": soft.ExtraDwellingRule,
     "access": soft.AccessRule,
     "acreage_fit": soft.AcreageFitRule,  # built with the ideal range in build_engine
+    "home_proximity": soft.HomeProximityRule,  # built with the home name in build_engine
 }
 
 PENALTY_RULES: dict[str, type[Rule]] = {
@@ -60,10 +61,14 @@ def build_engine(settings: Settings) -> RuleEngine:
         hard.RegionRule(hf, settings.counties_by_state),
         hard.AcreageRule(hf),
         hard.ListingStatusRule(),
+        hard.HomeDistanceRule(hf.max_drive_minutes_to_home, settings.home.name),
     ]
     for key, weight in settings.weights.items():
         if key == "acreage_fit":
             rules.append(soft.AcreageFitRule(weight, *settings.acreage_ideal))
+            continue
+        if key == "home_proximity":
+            rules.append(soft.HomeProximityRule(weight, settings.home.name))
             continue
         if key not in SOFT_RULES:
             raise ValueError(f"Unknown weight '{key}' in config; known: {sorted(SOFT_RULES)}")

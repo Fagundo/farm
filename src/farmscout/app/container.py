@@ -9,7 +9,12 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from farmscout.config.settings import Settings
-from farmscout.enrichment.enrichers import DriveTimeEnricher, EnrichmentChain, ZoningClassEnricher
+from farmscout.enrichment.enrichers import (
+    CountyFromCoordinatesEnricher,
+    DriveTimeEnricher,
+    EnrichmentChain,
+    ZoningClassEnricher,
+)
 from farmscout.extraction.base import FactExtractor, LayeredExtractor
 from farmscout.extraction.heuristic import HeuristicExtractor
 from farmscout.extraction.llm_extractor import LLMExtractor
@@ -52,19 +57,33 @@ def build_llm(settings: Settings) -> LLMClient | None:
     return AnthropicClient(key, s.model, s.max_tokens, s.web_search_max_uses)
 
 
+def build_query_builder(settings: Settings, seed: int | None = None) -> QueryBuilder:
+    """Query builder whose place weights come from drive time to home."""
+    def distance(place) -> int | None:
+        county = settings.counties.get(place.state, place.county)
+        if county is None:
+            return None
+        return settings.drive_model.minutes(county.lat, county.lon, settings.home,
+                                            road_factor=county.road_factor, adjust_min=county.adjust_min)
+    return QueryBuilder(settings.search, settings.hard_filters.max_price_usd, seed, distance)
+
+
 @dataclass(frozen=True)
 class SourceContext:
     settings: Settings
     llm: LLMClient | None
     seeds: Path
 
+    def _builder(self) -> QueryBuilder:
+        return build_query_builder(self.settings)
+
     @property
     def queries(self) -> list[str]:
-        return QueryBuilder(self.settings.search, self.settings.hard_filters.max_price_usd).build()
+        return self._builder().build()
 
     @property
     def portal_queries(self) -> list[str]:
-        return QueryBuilder(self.settings.search, self.settings.hard_filters.max_price_usd).build_portal()
+        return self._builder().build_portal()
 
 
 def _needs_llm(name: str, ctx: SourceContext) -> LLMClient | None:
@@ -105,7 +124,7 @@ def _brave(ctx: SourceContext) -> ListingSource | None:
 def _rentcast(ctx: SourceContext) -> ListingSource | None:
     key = _env("rentcast", "RENTCAST_API_KEY")
     hf, rc = ctx.settings.hard_filters, ctx.settings.rentcast
-    return key and RentCastSource(key, rc.states, hf.max_price_usd, hf.min_acres, hf.max_acres,
+    return key and RentCastSource(key, rc.areas, hf.max_price_usd, hf.min_acres, hf.max_acres,
                                   rc.max_pages_per_state, on_error=_warn("rentcast"))
 
 
@@ -142,7 +161,8 @@ def build_extractor(llm: LLMClient | None) -> FactExtractor:
 def build_enricher(settings: Settings) -> EnrichmentChain:
     return EnrichmentChain([
         ZoningClassEnricher(ZoningClassifier(settings.zoning_classes)),
-        DriveTimeEnricher(settings.drive_minutes),
+        CountyFromCoordinatesEnricher(settings.counties),
+        DriveTimeEnricher(settings.counties, settings.home, settings.metros, settings.drive_model),
     ])
 
 

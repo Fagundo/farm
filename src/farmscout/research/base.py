@@ -12,7 +12,8 @@ from farmscout.domain.models import PropertyFacts
 # Research may replace these even when the listing stated them: they go stale.
 OVERRIDABLE = {"listing_status", "price_usd", "canonical_url"}
 # Never touched by research.
-PROTECTED = {"url", "source", "title", "zoning_class", "drive_minutes_to_metro"}
+PROTECTED = {"url", "source", "title", "zoning_class", "drive_minutes_to_metro", "drive_minutes_to_home",
+             "nearest_metro"}
 
 
 @dataclass

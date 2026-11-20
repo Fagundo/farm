@@ -72,19 +72,45 @@ class PlungeWaterRule(Rule):
 
 
 class MetroProximityRule(Rule):
+    """Event guests and farm-stand customers: how far is the nearest city?"""
+
     rule_id = "metro_proximity"
 
     def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
-        m = facts.drive_minutes_to_metro
+        m, city = facts.drive_minutes_to_metro, facts.nearest_metro or "a city"
         if m is None:
             return self.unknown("Drive time to the nearest city unknown")
         if m <= 60:
-            return self.passed(f"~{m} min to a metro")
+            return self.passed(f"~{m} min to {city}")
         if m <= 90:
-            return self.partial(0.7, f"~{m} min to a metro")
+            return self.partial(0.7, f"~{m} min to {city}")
         if m <= 120:
-            return self.partial(0.4, f"~{m} min to a metro")
-        return self.failed(f"~{m} min to a metro — far for event guests")
+            return self.partial(0.4, f"~{m} min to {city}")
+        return self.failed(f"~{m} min to {city}: far for event guests")
+
+
+class HomeProximityRule(Rule):
+    """Favors places close to home (Seattle): full points within ``full_within`` minutes,
+    sliding to zero at ``zero_at``."""
+
+    rule_id = "home_proximity"
+
+    def __init__(self, max_points: float, home_name: str = "Seattle",
+                 full_within: int = 90, zero_at: int = 600) -> None:
+        super().__init__(max_points)
+        self._home, self._full, self._zero = home_name, full_within, zero_at
+
+    def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
+        m = facts.drive_minutes_to_home
+        if m is None:
+            return self.unknown(f"Drive time to {self._home} unknown")
+        hours = f"~{m / 60:.1f} h to {self._home}"
+        if m <= self._full:
+            return self.passed(hours)
+        fraction = max(0.0, (self._zero - m) / (self._zero - self._full))
+        if fraction == 0:
+            return self.failed(f"{hours}: a long way from home")
+        return self.partial(round(fraction, 2), hours)
 
 
 class ConvertibleBuildingsRule(Rule):

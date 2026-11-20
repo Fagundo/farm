@@ -61,6 +61,8 @@ def item_to_listing(item: dict, source: str) -> RawListing:
         state=item.get("state"),
         county=item.get("county"),
         city=item.get("city"),
+        latitude=item.get("latitude"),
+        longitude=item.get("longitude"),
         dwellings=0 if ptype == "Land" else 1,
         has_hoa=(hoa_fee > 0) if isinstance(hoa_fee, (int, float)) else None,
         summary=summary,
@@ -74,7 +76,7 @@ class RentCastSource(ListingSource):
     def __init__(
         self,
         api_key: str,
-        states: Sequence[str],
+        areas: Sequence[dict | str],
         max_price_usd: int,
         min_acres: float,
         max_acres: float,
@@ -83,7 +85,8 @@ class RentCastSource(ListingSource):
         on_error=None,
     ) -> None:
         self._key = api_key
-        self._states = list(states)
+        # An area is a state ("WA" or {"state": "WA"}) or a circle {"lat":, "lon":, "radius": miles}.
+        self._areas = [{"state": a} if isinstance(a, str) else dict(a) for a in areas]
         self._max_price = max_price_usd
         self._lot = f"{int(min_acres * SQFT_PER_ACRE)}:{int(max_acres * SQFT_PER_ACRE)}"
         self._max_pages = max_pages_per_state
@@ -92,10 +95,14 @@ class RentCastSource(ListingSource):
 
     def discover(self) -> Iterator[RawListing]:
         headers = {"Accept": "application/json", "X-Api-Key": self._key}
-        for state in self._states:
+        for area in self._areas:
+            label = area.get("name") or area.get("state") or f"{area.get('lat')},{area.get('lon')}"
+            where = ({"state": area["state"]} if "state" in area else
+                     {"latitude": str(area["lat"]), "longitude": str(area["lon"]),
+                      "radius": str(min(float(area.get("radius", 100)), 100))})
             for page in range(self._max_pages):
                 params = {
-                    "state": state,
+                    **where,
                     "status": "Active",
                     "price": f"*:{self._max_price}",
                     "lotSize": self._lot,
@@ -105,9 +112,9 @@ class RentCastSource(ListingSource):
                 try:
                     items = self._get(f"{ENDPOINT}?{urllib.parse.urlencode(params)}", headers)
                 except Exception as exc:  # noqa: BLE001
-                    self._on_error(state, exc)
+                    self._on_error(label, exc)
                     break
                 for item in items:
-                    yield item_to_listing(item, f"{self.name}:{state}")
+                    yield item_to_listing(item, f"{self.name}:{label}")
                 if len(items) < PAGE_SIZE:
                     break

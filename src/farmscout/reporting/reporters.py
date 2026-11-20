@@ -23,7 +23,7 @@ class Reporter(ABC):
 class CsvReporter(Reporter):
     COLUMNS = [
         "score", "new", "title", "price_usd", "acres", "county", "state", "zoning", "zoning_class",
-        "existing_uses", "water_features", "drive_minutes_to_metro", "listing_status", "red_flags", "to_verify", "research_notes", "url",
+        "existing_uses", "water_features", "drive_minutes_to_home", "drive_minutes_to_metro", "listing_status", "red_flags", "to_verify", "research_notes", "url",
     ]
 
     def __init__(self, out_dir: Path) -> None:
@@ -42,6 +42,7 @@ class CsvReporter(Reporter):
                     "acres": f.acres, "county": f.county, "state": f.state, "zoning": f.zoning,
                     "zoning_class": f.zoning_class, "existing_uses": "; ".join(f.existing_uses),
                     "water_features": "; ".join(f.water_features),
+                    "drive_minutes_to_home": f.drive_minutes_to_home,
                     "drive_minutes_to_metro": f.drive_minutes_to_metro,
                     "listing_status": f.listing_status, "red_flags": "; ".join(e.red_flags),
                     "to_verify": "; ".join(e.to_verify), "research_notes": f.research_notes, "url": f.link,

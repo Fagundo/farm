@@ -46,6 +46,10 @@ class PropertyFacts:
     in_floodplain: bool | None = None
     has_hoa: bool | None = None
     drive_minutes_to_metro: int | None = None
+    drive_minutes_to_home: int | None = None   # to Seattle (config [home])
+    nearest_metro: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     summary: str = ""
     # Filled by the research step.
     listing_status: str | None = None  # "active" | "pending" | "sold" | "off_market"

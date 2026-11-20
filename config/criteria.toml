@@ -1,12 +1,15 @@
 # farmscout criteria — the single place to tune what counts as a good property.
 # Target: agriculture + sauna + event space / farm-to-table, Pacific Northwest, <= $1M.
-# Area: all of WA and OR, plus the Boise area and north Idaho.
+# Area: WA and OR, most of Idaho, western Montana and far northern California,
+# scored to favor places close to Seattle.
 
 [hard_filters]
 max_price_usd = 1_000_000
 min_acres = 2
 max_acres = 160
-allowed_states = ["WA", "OR", "ID"]
+allowed_states = ["WA", "OR", "ID", "MT", "CA"]
+# Farther than this from home (Seattle) is out of range.
+max_drive_minutes_to_home = 690
 # Listings with an unknown price/acreage/county are kept but flagged "verify".
 keep_unknowns = true
 
@@ -15,102 +18,43 @@ keep_unknowns = true
 ideal_min = 5
 ideal_max = 80
 
-# Counties in the search area, per state, with approximate one-way drive minutes from the
-# county's population center to the nearest metro (Seattle, Portland, Spokane or Boise).
-# A county must be listed here to be in range. Edit freely; estimates are rough.
-[regions.WA.drive_minutes]
-Adams = 90
-Asotin = 150
-Benton = 150
-Chelan = 140
-Clallam = 150
-Clark = 20
-Columbia = 150
-Cowlitz = 50
-Douglas = 150
-Ferry = 135
-Franklin = 140
-Garfield = 150
-Grant = 120
-"Grays Harbor" = 120
-Island = 90
-Jefferson = 120
-King = 40
-Kitsap = 75
-Kittitas = 100
-Klickitat = 100
-Lewis = 100
-Lincoln = 50
-Mason = 95
-Okanogan = 210
-Pacific = 140
-"Pend Oreille" = 75
-Pierce = 50
-"San Juan" = 180
-Skagit = 75
-Skamania = 60
-Snohomish = 45
-Spokane = 20
-Stevens = 60
-Thurston = 65
-Wahkiakum = 90
-"Walla Walla" = 180
-Whatcom = 105
-Whitman = 75
-Yakima = 140
+# Where "close" is measured from. The home_proximity rule scores drive time to here.
+[home]
+name = "Seattle"
+lat = 47.6062
+lon = -122.3321
 
-[regions.OR.drive_minutes]
-Baker = 130
-Benton = 100
-Clackamas = 35
-Clatsop = 120
-Columbia = 50
-Coos = 240
-Crook = 200
-Curry = 300
-Deschutes = 180
-Douglas = 210
-Gilliam = 150
-Grant = 240
-Harney = 200
-"Hood River" = 75
-Jackson = 290
-Jefferson = 150
-Josephine = 270
-Klamath = 270
-Lake = 300
-Lane = 120
-Lincoln = 140
-Linn = 90
-Malheur = 60
-Marion = 60
-Morrow = 180
-Multnomah = 20
-Polk = 80
-Sherman = 120
-Tillamook = 110
-Umatilla = 180
-Union = 180
-Wallowa = 240
-Wasco = 90
-Washington = 30
-Wheeler = 210
-Yamhill = 60
+# Cities event guests and customers come from; metro_proximity scores the nearest one.
+[[metros]]
+name = "Seattle"
+lat = 47.6062
+lon = -122.3321
+[[metros]]
+name = "Portland"
+lat = 45.5152
+lon = -122.6784
+[[metros]]
+name = "Spokane"
+lat = 47.6588
+lon = -117.4260
+[[metros]]
+name = "Boise"
+lat = 43.6150
+lon = -116.2023
+[[metros]]
+name = "Missoula"
+lat = 46.8721
+lon = -113.9940
+[[metros]]
+name = "Sacramento"
+lat = 38.5816
+lon = -121.4944
 
-[regions.ID.drive_minutes]
-Ada = 15
-Benewah = 75
-Boise = 60
-Bonner = 90
-Boundary = 120
-Canyon = 30
-Elmore = 50
-Gem = 45
-Kootenai = 40
-Latah = 90
-"Nez Perce" = 120
-Shoshone = 80
-Valley = 120
+# Counties in range, with coordinates for drive-time estimates. A county must be listed to be in range.
+[geo]
+counties_file = "config/counties.csv"
+road_factor = 1.2   # road miles per straight-line mile
+mph = 60
 
 # Zoning classes, checked in this order; first regex match wins (case-insensitive).
 # "commercial" = restaurant/venue plausible; "mixed" = conditional uses likely;
@@ -142,10 +86,11 @@ patterns = [
 # Soft rules: points toward the fit score. The total is scaled to 0-100, so weights are relative.
 [weights]
 commercial_pathway = 30
+home_proximity = 20
 existing_approved_use = 15
 water_supply = 10
 plunge_water = 10
-metro_proximity = 10
+metro_proximity = 5
 convertible_buildings = 10
 commercial_kitchen = 5
 extra_dwelling = 5
@@ -165,7 +110,7 @@ shortlist_threshold = 55
 
 [search]
 # Each run picks a random sample of (property type x place) combinations, so successive weekly
-# runs cover the whole grid. Each query is one Claude call with up to web_search_max_uses searches.
+# runs cover the grid. Each query is one Claude call with up to web_search_max_uses searches.
 max_queries = 100
 max_portal_queries = 60
 results_per_query = 15
@@ -188,21 +133,61 @@ property_types = [
   "farm stay or agritourism property for sale",
   "former restaurant on acreage for sale",
 ]
+# Places to search. Each run samples (property type x place) combinations weighted toward places
+# close to home, so Seattle-area places come up far more often than Montana or California.
 places = [
-  # Western Washington
-  "Skagit County WA", "Snohomish County WA", "Whatcom County WA", "Kitsap Peninsula WA",
-  "Olympic Peninsula WA", "Sequim WA", "Whidbey Island WA", "San Juan Islands WA",
-  "Thurston County WA", "Enumclaw WA", "Snoqualmie Valley WA", "Lewis County WA",
-  "Long Beach Peninsula WA", "Clark County WA", "Cowlitz County WA",
-  # Eastern Washington
-  "Leavenworth WA", "Lake Chelan WA", "Methow Valley WA", "Cle Elum Roslyn WA", "Ellensburg WA",
-  "Yakima Valley WA", "Walla Walla WA", "White Salmon Klickitat County WA", "Spokane County WA",
-  # Oregon
-  "Willamette Valley OR", "Yamhill County OR", "Hood River OR", "Columbia River Gorge OR",
-  "Oregon Coast", "Tillamook County OR", "Clackamas County OR", "Silverton OR", "Eugene OR",
-  "McKenzie River OR", "Bend Sisters OR", "Rogue Valley Ashland OR", "Southern Oregon",
-  # Idaho
-  "Sandpoint ID", "Coeur d'Alene ID", "McCall ID", "Boise foothills ID",
+  { name = "Skagit County WA", state = "WA", county = "Skagit" },
+  { name = "Snohomish County WA", state = "WA", county = "Snohomish" },
+  { name = "Whatcom County WA", state = "WA", county = "Whatcom" },
+  { name = "Kitsap Peninsula WA", state = "WA", county = "Kitsap" },
+  { name = "Olympic Peninsula WA", state = "WA", county = "Clallam" },
+  { name = "Sequim WA", state = "WA", county = "Clallam" },
+  { name = "Whidbey Island WA", state = "WA", county = "Island" },
+  { name = "San Juan Islands WA", state = "WA", county = "San Juan" },
+  { name = "Thurston County WA", state = "WA", county = "Thurston" },
+  { name = "Enumclaw WA", state = "WA", county = "King" },
+  { name = "Snoqualmie Valley WA", state = "WA", county = "King" },
+  { name = "Lewis County WA", state = "WA", county = "Lewis" },
+  { name = "Long Beach Peninsula WA", state = "WA", county = "Pacific" },
+  { name = "Clark County WA", state = "WA", county = "Clark" },
+  { name = "Cowlitz County WA", state = "WA", county = "Cowlitz" },
+  { name = "Leavenworth WA", state = "WA", county = "Chelan" },
+  { name = "Lake Chelan WA", state = "WA", county = "Chelan" },
+  { name = "Methow Valley WA", state = "WA", county = "Okanogan" },
+  { name = "Cle Elum Roslyn WA", state = "WA", county = "Kittitas" },
+  { name = "Ellensburg WA", state = "WA", county = "Kittitas" },
+  { name = "Yakima Valley WA", state = "WA", county = "Yakima" },
+  { name = "Walla Walla WA", state = "WA", county = "Walla Walla" },
+  { name = "White Salmon Klickitat County WA", state = "WA", county = "Klickitat" },
+  { name = "Spokane County WA", state = "WA", county = "Spokane" },
+  { name = "Willamette Valley OR", state = "OR", county = "Marion" },
+  { name = "Yamhill County OR", state = "OR", county = "Yamhill" },
+  { name = "Hood River OR", state = "OR", county = "Hood River" },
+  { name = "Columbia River Gorge OR", state = "OR", county = "Wasco" },
+  { name = "Oregon Coast", state = "OR", county = "Lincoln" },
+  { name = "Tillamook County OR", state = "OR", county = "Tillamook" },
+  { name = "Clackamas County OR", state = "OR", county = "Clackamas" },
+  { name = "Silverton OR", state = "OR", county = "Marion" },
+  { name = "Eugene OR", state = "OR", county = "Lane" },
+  { name = "McKenzie River OR", state = "OR", county = "Lane" },
+  { name = "Bend Sisters OR", state = "OR", county = "Deschutes" },
+  { name = "Rogue Valley Ashland OR", state = "OR", county = "Jackson" },
+  { name = "Southern Oregon", state = "OR", county = "Josephine" },
+  { name = "Sandpoint ID", state = "ID", county = "Bonner" },
+  { name = "Coeur d'Alene ID", state = "ID", county = "Kootenai" },
+  { name = "Moscow Palouse ID", state = "ID", county = "Latah" },
+  { name = "McCall ID", state = "ID", county = "Valley" },
+  { name = "Boise foothills ID", state = "ID", county = "Ada" },
+  { name = "Sun Valley Hailey ID", state = "ID", county = "Blaine" },
+  { name = "Flathead Valley MT", state = "MT", county = "Flathead" },
+  { name = "Flathead Lake Polson MT", state = "MT", county = "Lake" },
+  { name = "Missoula MT", state = "MT", county = "Missoula" },
+  { name = "Bitterroot Valley MT", state = "MT", county = "Ravalli" },
+  { name = "Bozeman MT", state = "MT", county = "Gallatin" },
+  { name = "Mount Shasta CA", state = "CA", county = "Siskiyou" },
+  { name = "Redding CA", state = "CA", county = "Shasta" },
+  { name = "Humboldt County CA", state = "CA", county = "Humboldt" },
+  { name = "Trinity County CA", state = "CA", county = "Trinity" },
 ]
 # "portals" source: Claude web search restricted to these sites (finds their indexed
 # listing pages through search; never crawls the sites themselves).
@@ -220,9 +205,33 @@ listing_domains = [
 ]
 
 [rentcast]
-# Licensed MLS listings API (RENTCAST_API_KEY). One request per state returns up to 500.
-states = ["WA", "OR", "ID"]
+# Licensed MLS listings API (RENTCAST_API_KEY). Each area is a whole state or a circle of up to
+# 100 miles; one request returns up to 500 listings.
 max_pages_per_state = 4
+[[rentcast.areas]]
+state = "WA"
+[[rentcast.areas]]
+state = "OR"
+[[rentcast.areas]]
+name = "North Idaho"
+lat = 47.4
+lon = -116.6
+radius = 100
+[[rentcast.areas]]
+name = "Boise and McCall"
+lat = 44.2
+lon = -116.2
+radius = 100
+[[rentcast.areas]]
+name = "Western Montana"
+lat = 47.4
+lon = -114.3
+radius = 100
+[[rentcast.areas]]
+name = "Far northern California"
+lat = 41.1
+lon = -122.6
+radius = 100
 
 [inbox]
 # Drop Redfin "Download All" CSV exports here.

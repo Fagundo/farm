@@ -126,6 +126,9 @@ footer { color: var(--muted); font-size: 13px; }
       <button type="button" data-v="" aria-pressed="true">All</button>
       <button type="button" data-v="WA" aria-pressed="false">WA</button>
       <button type="button" data-v="OR" aria-pressed="false">OR</button>
+      <button type="button" data-v="ID" aria-pressed="false">ID</button>
+      <button type="button" data-v="MT" aria-pressed="false">MT</button>
+      <button type="button" data-v="CA" aria-pressed="false">CA</button>
     </div>
     <label for="minScore">Min score <input type="range" id="minScore" min="0" max="100" step="5" value="0"> <output id="minScoreOut">0</output></label>
     <label for="sort">Sort
@@ -133,7 +136,7 @@ footer { color: var(--muted); font-size: 13px; }
         <option value="score">Best fit</option>
         <option value="price">Lowest price</option>
         <option value="acres">Most acres</option>
-        <option value="drive">Closest to a city</option>
+        <option value="drive">Closest to Seattle</option>
       </select>
     </label>
     <label for="starred"><input type="checkbox" id="starred"> Starred</label>
@@ -181,13 +184,14 @@ footer { color: var(--muted); font-size: 13px; }
     return '<a href="' + esc(z) + '" target="_blank" rel="noopener">Find on Zillow</a>' +
            '<a href="' + esc(g) + '" target="_blank" rel="noopener">Search the web</a>';
   }
+  function hrs(m) { return m < 60 ? m + " min" : (Math.round(m / 6) / 10) + " h"; }
   function day(iso) { return iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""; }
   var ZLABEL = { commercial: "Commercial zoning", mixed: "Mixed / conditional", farm_only: "Farm-only zoning",
                  forest_only: "Forest zoning", other: "Zoning: check code" };
 
   function intro() {
     var d = new Date(DATA.generated);
-    $("intro").textContent = "Pacific Northwest properties that could hold a farm, a sauna and an event space or farm-to-table dinners, scored 0–100 against the search rules. Updated " +
+    $("intro").textContent = "Properties in Washington, Oregon, Idaho, western Montana and far northern California that could hold a farm, a sauna and an event space or farm-to-table dinners, scored 0–100 with closeness to Seattle weighted heavily. Updated " +
       d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) + ".";
     var ok = rows.filter(function (r) { return !r.disqualified; });
     var short = ok.filter(function (r) { return r.score >= DATA.threshold; });
@@ -201,7 +205,7 @@ footer { color: var(--muted); font-size: 13px; }
       [median ? "$" + Math.round(median / 1000) + "k" : "–", "median asking price"]
     ].map(function (t) { return '<div class="tile"><b>' + esc(t[0]) + "</b><span>" + esc(t[1]) + "</span></div>"; }).join("");
     $("footer").innerHTML = "Scores reward zoning or existing permits that allow events (30 pts), an operating venue or winery (15), water rights, a creek or river for a cold plunge, " +
-      "drive time to Seattle, Portland, Spokane or Boise, big outbuildings, a commercial kitchen, a second home and road access. Missing details score zero and appear under <i>To verify</i>. " +
+      "drive time to Seattle (20 pts; drive times are estimates), a nearby city for guests, big outbuildings, a commercial kitchen, a second home and road access. Missing details score zero and appear under <i>To verify</i>. " +
       "Listings are as advertised; confirm zoning with the county before relying on a score. Each run checks that every link opens its property and re-confirms that it is still for sale. If a link fails, use Find on Zillow or Search the web. Stars are saved in this browser only.";
   }
 
@@ -222,7 +226,7 @@ footer { color: var(--muted); font-size: 13px; }
     score: function (a, b) { return b.score - a.score; },
     price: function (a, b) { return (a.price_usd || 9e9) - (b.price_usd || 9e9); },
     acres: function (a, b) { return (b.acres || 0) - (a.acres || 0); },
-    drive: function (a, b) { return (a.drive_minutes_to_metro || 999) - (b.drive_minutes_to_metro || 999); }
+    drive: function (a, b) { return (a.drive_minutes_to_home || 9999) - (b.drive_minutes_to_home || 9999); }
   };
 
   function list(items, cls, title) {
@@ -240,7 +244,9 @@ footer { color: var(--muted); font-size: 13px; }
       var meta = ["<b>" + money(r.price_usd) + "</b>",
                   r.acres != null ? "<b>" + r.acres + "</b> acres" : "Acres ?",
                   esc(loc || "Location ?"),
-                  r.drive_minutes_to_metro != null ? "~" + r.drive_minutes_to_metro + " min to nearest city" : ""].filter(Boolean);
+                  r.drive_minutes_to_home != null ? "<b>~" + hrs(r.drive_minutes_to_home) + "</b> to Seattle" : "",
+                  r.nearest_metro && r.nearest_metro !== "Seattle" && r.drive_minutes_to_metro != null
+                    ? "~" + hrs(r.drive_minutes_to_metro) + " to " + esc(r.nearest_metro) : ""].filter(Boolean);
       var chips = [];
       if (r.disqualified) chips.push('<span class="chip dq">Ruled out</span>');
       if (r.listing_status) chips.push('<span class="chip st-' + esc(r.listing_status) + '">' + esc(STATUS[r.listing_status] || r.listing_status) + "</span>");

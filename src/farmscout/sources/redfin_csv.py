@@ -61,6 +61,8 @@ def row_to_listing(row: dict[str, str], source: str) -> RawListing | None:
         acres=acres,
         state=state,
         city=city or None,
+        latitude=_num(_column(row, "LATITUDE")),
+        longitude=_num(_column(row, "LONGITUDE")),
         dwellings=(1 if beds else 0) if ptype.lower() != "vacant land" else 0,
         has_hoa=(hoa > 0) if hoa is not None else None,
         summary=f"Redfin export: {ptype or 'property'}"

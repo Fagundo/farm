@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from dataclasses import replace
 
 from farmscout.domain.models import PropertyFacts
+from farmscout.geo.drive_time import CountyTable, DriveTimeModel, Place
 from farmscout.zoning.classifier import ZoningClassifier
 
 
@@ -23,23 +24,50 @@ class ZoningClassEnricher(Enricher):
         return replace(facts, zoning_class=self._c.classify(facts.zoning))
 
 
-class DriveTimeEnricher(Enricher):
-    """Estimates drive minutes to the nearest metro from a (state, county) lookup table.
+class CountyFromCoordinatesEnricher(Enricher):
+    """Fills a missing county with the nearest listed county seat in the same state.
 
-    Keyed by state because county names repeat across states (Lincoln, Douglas, Columbia...).
+    Approximate near county lines, but enough for the region and drive-time rules.
     """
 
-    def __init__(self, minutes: dict[str, dict[str, int]]) -> None:
-        self._table = {
-            st.upper(): {c.lower(): m for c, m in counties.items()} for st, counties in minutes.items()
-        }
+    def __init__(self, counties: CountyTable) -> None:
+        self._counties = counties
 
     def enrich(self, facts: PropertyFacts) -> PropertyFacts:
-        if facts.drive_minutes_to_metro is not None or not facts.county or not facts.state:
+        if facts.county or facts.latitude is None or facts.longitude is None or not facts.state:
             return facts
-        county = facts.county.lower().removesuffix(" county").strip()
-        minutes = self._table.get(facts.state.upper(), {}).get(county)
-        return replace(facts, drive_minutes_to_metro=minutes)
+        nearest = self._counties.nearest(facts.state, facts.latitude, facts.longitude)
+        return replace(facts, county=nearest.name) if nearest else facts
+
+
+class DriveTimeEnricher(Enricher):
+    """Estimates drive minutes to home (Seattle) and to the nearest metro.
+
+    Uses the property's own coordinates when known, else its county's (by state + county, since
+    county names repeat across states). Always recomputed, so config changes take effect.
+    """
+
+    def __init__(self, counties: CountyTable, home: Place, metros: Sequence[Place],
+                 model: DriveTimeModel) -> None:
+        self._counties = counties
+        self._home = home
+        self._metros = list(metros)
+        self._model = model
+
+    def enrich(self, facts: PropertyFacts) -> PropertyFacts:
+        county = self._counties.get(facts.state, facts.county)
+        if facts.latitude is not None and facts.longitude is not None:
+            lat, lon = facts.latitude, facts.longitude
+        elif county is not None:
+            lat, lon = county.lat, county.lon
+        else:
+            return replace(facts, drive_minutes_to_home=None, drive_minutes_to_metro=None, nearest_metro=None)
+        kw = {"road_factor": county.road_factor, "adjust_min": county.adjust_min} if county else {}
+        to_home = self._model.minutes(lat, lon, self._home, **kw)
+        metro, to_metro = min(((m, self._model.minutes(lat, lon, m, **kw)) for m in self._metros),
+                              key=lambda t: t[1])
+        return replace(facts, drive_minutes_to_home=to_home, drive_minutes_to_metro=to_metro,
+                       nearest_metro=metro.name)
 
 
 class EnrichmentChain(Enricher):

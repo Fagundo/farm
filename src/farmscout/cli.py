@@ -12,12 +12,12 @@ from farmscout.app.container import (
     DEFAULT_SOURCES,
     build_pipeline,
     build_research_stage,
+    build_query_builder,
     build_verification_stage,
 )
 from farmscout.research.stage import ResearchPolicy
 from farmscout.config.settings import Settings
 from farmscout.domain.models import PropertyFacts, RawListing
-from farmscout.search.query_builder import QueryBuilder
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -63,7 +63,8 @@ def main(argv: list[str] | None = None) -> int:
     settings = Settings.load(args.config)
 
     if args.cmd == "queries":
-        for q in QueryBuilder(settings.search, settings.hard_filters.max_price_usd).build():
+        builder = build_query_builder(settings)
+        for q in builder.build() + builder.build_portal():
             print(q)
         return 0
 

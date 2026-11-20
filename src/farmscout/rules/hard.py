@@ -78,3 +78,23 @@ class ListingStatusRule(HardRule):
         if status == "active":
             return self.passed("Listing confirmed active")
         return self.unknown("Listing status not confirmed")
+
+
+class HomeDistanceRule(HardRule):
+    """Out of range when the estimated drive to home (Seattle) exceeds the configured maximum."""
+
+    rule_id = "home_distance"
+
+    def __init__(self, max_minutes: int | None, home_name: str = "Seattle") -> None:
+        super().__init__()
+        self._max, self._home = max_minutes, home_name
+
+    def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
+        m = facts.drive_minutes_to_home
+        if self._max is None:
+            return self.passed("")
+        if m is None:
+            return self.unknown(f"Distance to {self._home} unknown")
+        if m <= self._max:
+            return self.passed(f"Within {self._max / 60:.0f} h of {self._home}")
+        return self.failed(f"~{m / 60:.1f} h from {self._home} (limit {self._max / 60:.0f} h)")

@@ -98,7 +98,7 @@ def test_import_facts_scores_without_fetching(tmp_path, settings, enricher):
     s = p.import_facts([PropertyFacts(url="https://ex.com/z", state="OR", county="Linn",
                                       price_usd=500_000, acres=10, zoning="AB (Agri-Business)")])
     ev = p._repo.all()[0].evaluation
-    assert s.evaluated == 1 and ev.facts.zoning_class == "mixed" and ev.facts.drive_minutes_to_metro == 90
+    assert s.evaluated == 1 and ev.facts.zoning_class == "mixed" and ev.facts.nearest_metro == "Portland"
 
 
 def test_site_reporter_embeds_escaped_data(tmp_path, settings, enricher):
