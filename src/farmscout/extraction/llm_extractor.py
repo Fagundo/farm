@@ -28,15 +28,20 @@ Return ONLY a JSON object with exactly these keys:
   "has_barn": bool|null,              // barn, shop or large outbuilding
   "largest_outbuilding_sqft": int|null,
   "road_access": "paved"|"gravel"|"shared_private"|null,
+  "property_type": "land"|"improved"|null,   // "land" = vacant, no home or buildings
+  "has_power": bool|null,             // power on site or at the road
+  "has_public_water": bool|null,
+  "septic": "existing"|"approved"|"perc_tested"|"none"|null,
   "in_floodplain": bool|null,
   "has_hoa": bool|null,
-  "summary": str                      // one sentence on fit for farm + sauna + events
+  "summary": str                      // one sentence on fit for farm + sauna + events (or, for land, what it's zoned for)
 }"""
 
 _ALLOWED = {
     "price_usd", "acres", "state", "county", "city", "zoning", "existing_uses", "has_water_rights",
     "has_well", "water_features", "has_commercial_kitchen", "dwellings", "has_barn",
     "largest_outbuilding_sqft", "road_access", "in_floodplain", "has_hoa", "summary",
+    "property_type", "has_power", "has_public_water", "septic",
 }
 
 

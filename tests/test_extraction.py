@@ -74,3 +74,8 @@ def test_html_to_text_keeps_title_first_and_drops_scripts():
                         "<body><p>20 acres</p><style>.a{}</style></body></html>")
     assert text.splitlines()[0] == "Farm for sale"
     assert "20 acres" in text and "x()" not in text
+
+
+def test_parse_json_payload_prefers_outer_object():
+    assert parse_json_payload('{"updates": {}, "sources": []}') == {"updates": {}, "sources": []}
+    assert parse_json_payload('[{"url": "x"}]') == [{"url": "x"}]

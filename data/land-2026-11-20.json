@@ -1,0 +1,12 @@
+[
+  {"url": "https://www.land.com/property/8840-southwest-hebo-road-grand-ronde-oregon-97347/28486486/",
+   "title": "Commercial land with Yamhill River frontage, 8840 SW Hebo Rd, Grand Ronde", "source": "web:land.com",
+   "property_type": "land", "price_usd": 430000, "acres": 2.66, "state": "OR", "county": "Polk", "city": "Grand Ronde",
+   "zoning": "NPC-C Commercial", "water_features": ["river"], "dwellings": 0, "has_barn": false,
+   "summary": "Two adjoining parcels (~2.66 ac) zoned county NPC-C Commercial with Yamhill River frontage near Hwy 18 / Spirit Mountain. Utilities not stated; confirm power, water and septic with agent."},
+  {"url": "https://www.landbrokermls.com/property/703189121/3-45-acres-commerical-tourist-zone-florence-or",
+   "title": "3.45 acres, Commercial/Tourist (CT) zone, Florence", "source": "web:landbrokermls",
+   "property_type": "land", "price_usd": 450000, "acres": 3.45, "state": "OR", "county": "Lane", "city": "Florence",
+   "zoning": "Commercial/Tourist (CT)", "dwellings": 0, "has_barn": false,
+   "summary": "Vacant 3.45 ac just outside Florence city limits but inside the UGB; CT zoning allows many tourist/commercial uses. Utilities not stated; city services likely nearby given UGB location."}
+]

@@ -1,6 +1,7 @@
 """Researcher that replays findings saved in a JSON file (manual research, or a past run).
 
-File format: a list of {"url": ..., "updates": {...}, "notes": "...", "sources": [...]}.
+File format: a list of {"url": ..., "updates": {...}, "notes": "...", "sources": [...],
+"force": [field names to overwrite even if the listing stated them]}.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ class FileResearcher(PropertyResearcher):
         items = json.loads(Path(path).read_text())
         self._by_url = {
             normalize_url(i["url"]): ResearchResult(i["url"], i.get("updates", {}), i.get("notes", ""),
-                                                     i.get("sources", []))
+                                                     i.get("sources", []), i.get("force", []))
             for i in items
         }
 

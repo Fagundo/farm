@@ -43,9 +43,17 @@ class PropertyFacts:
     has_barn: bool | None = None
     largest_outbuilding_sqft: int | None = None
     road_access: str | None = None  # "paved" | "gravel" | "shared_private"
+    property_type: str | None = None  # "land" (vacant) | "improved" (has a home or buildings)
+    has_power: bool | None = None     # power on site or at the road
+    has_public_water: bool | None = None
+    septic: str | None = None         # "existing" | "approved" | "perc_tested" | "none"
     in_floodplain: bool | None = None
     has_hoa: bool | None = None
     drive_minutes_to_metro: int | None = None
+    drive_minutes_to_home: int | None = None   # to Seattle (config [home])
+    nearest_metro: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     summary: str = ""
     # Filled by the research step.
     listing_status: str | None = None  # "active" | "pending" | "sold" | "off_market"
@@ -53,10 +61,21 @@ class PropertyFacts:
     research_notes: str = ""
     research_sources: list[str] = field(default_factory=list)
     researched_at: str | None = None
+    status_checked_at: str | None = None
+    # Filled by the link check.
+    link_status: str | None = None  # "ok" | "broken" | "wrong_property" | "blocked" | "unreachable"
+    link_checked_at: str | None = None
 
     @property
     def link(self) -> str:
         return self.canonical_url or self.url
+
+    @property
+    def is_land(self) -> bool:
+        """Vacant land: stated as such, or no dwellings and no buildings."""
+        if self.property_type:
+            return self.property_type == "land"
+        return self.dwellings == 0 and self.has_barn is False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -80,6 +99,7 @@ class PropertyFacts:
 
 
 class Status(str, Enum):
+    NOT_APPLICABLE = "n/a"
     PASS = "pass"
     PARTIAL = "partial"
     FAIL = "fail"

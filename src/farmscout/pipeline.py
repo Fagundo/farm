@@ -105,8 +105,19 @@ class ScoutPipeline:
         summary.reports = self.report(new_urls)
         return summary
 
+    def rescore(self) -> int:
+        """Re-evaluate every stored property against the current rules; return how many changed."""
+        changed = 0
+        for c in self._repo.all():
+            ev = self.evaluate_facts(c.evaluation.facts)
+            if ev.score != c.evaluation.score or ev.disqualified != c.evaluation.disqualified:
+                self._repo.save(ev)
+                changed += 1
+        return changed
+
     def report(self, new_urls: set[str] | None = None, new_within_days: int = 7) -> list[Path]:
         """Write every report. Without explicit ``new_urls``, "new" means first seen within N days."""
+        self.rescore()
         stored = self._repo.all()
         if new_urls is None:
             cutoff = (datetime.now(timezone.utc) - timedelta(days=new_within_days)).isoformat()

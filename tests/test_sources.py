@@ -84,4 +84,18 @@ def test_prefilled_facts_win_and_skip_extraction_when_page_blocked(tmp_path, set
     s = p.run()
     ev = p._repo.all()[0].evaluation
     assert s.evaluated == 1 and not ev.disqualified
-    assert ev.facts.county == "Clallam" and ev.facts.drive_minutes_to_metro == 150
+    assert ev.facts.county == "Clallam" and 100 < ev.facts.drive_minutes_to_home < 180
+
+
+def test_rentcast_circle_area_params():
+    calls = []
+    src = RentCastSource("k", [{"name": "W MT", "lat": 47.4, "lon": -114.3, "radius": 150}], 1_000_000, 2, 160,
+                         get_json=lambda url, h: calls.append(url) or [])
+    list(src.discover())
+    assert "latitude=47.4" in calls[0] and "radius=100" in calls[0] and "state=" not in calls[0]
+
+
+def test_county_filled_from_coordinates(enricher):
+    from tests.conftest import facts
+    f = enricher.enrich(facts(county=None, state="WA", latitude=48.42, longitude=-122.34))
+    assert f.county == "Skagit" and f.drive_minutes_to_home < 90

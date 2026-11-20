@@ -8,6 +8,7 @@ import urllib.parse
 import urllib.request
 import urllib.robotparser
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from html.parser import HTMLParser
 
 from farmscout.config.settings import FetchSettings
@@ -17,6 +18,23 @@ class PageFetcher(ABC):
     @abstractmethod
     def fetch_text(self, url: str) -> str | None:
         """Return visible page text, or None if unavailable/blocked."""
+
+
+@dataclass(frozen=True)
+class FetchResult:
+    """Outcome of loading a page: why it failed matters for link checking."""
+
+    url: str
+    http_status: int | None = None   # None when no response (network error, robots)
+    text: str | None = None
+    final_url: str | None = None     # after redirects
+    blocked: bool = False            # robots.txt or 401/403/429: can't tell if the link works
+    error: str = ""
+
+
+class PageProbe(ABC):
+    @abstractmethod
+    def probe(self, url: str) -> FetchResult: ...
 
 
 class _TextExtractor(HTMLParser):
@@ -55,7 +73,7 @@ def html_to_text(html: str) -> str:
     return p.title + "\n" + " ".join(p.parts)
 
 
-class HttpPageFetcher(PageFetcher):
+class HttpPageFetcher(PageFetcher, PageProbe):
     def __init__(self, settings: FetchSettings, on_error=None) -> None:
         self._s = settings
         self._robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
@@ -63,19 +81,25 @@ class HttpPageFetcher(PageFetcher):
         self._on_error = on_error or (lambda url, exc: None)
 
     def fetch_text(self, url: str) -> str | None:
+        return self.probe(url).text
+
+    def probe(self, url: str) -> FetchResult:
         host = urllib.parse.urlparse(url).netloc
         if self._s.respect_robots and not self._allowed(url):
             self._on_error(url, PermissionError("disallowed by robots.txt"))
-            return None
+            return FetchResult(url, blocked=True, error="robots.txt")
         self._throttle(host)
         req = urllib.request.Request(url, headers={"User-Agent": self._s.user_agent})
         try:
             with urllib.request.urlopen(req, timeout=self._s.timeout_seconds) as resp:
                 html = resp.read().decode(resp.headers.get_content_charset() or "utf-8", "replace")
+                return FetchResult(url, resp.status, html_to_text(html)[: self._s.max_chars], resp.geturl())
+        except urllib.error.HTTPError as exc:
+            self._on_error(url, exc)
+            return FetchResult(url, exc.code, blocked=exc.code in (401, 403, 429), error=str(exc))
         except (urllib.error.URLError, TimeoutError, ValueError) as exc:
             self._on_error(url, exc)
-            return None
-        return html_to_text(html)[: self._s.max_chars]
+            return FetchResult(url, error=str(exc))
 
     def _allowed(self, url: str) -> bool:
         parts = urllib.parse.urlparse(url)

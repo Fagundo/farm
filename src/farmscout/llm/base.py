@@ -37,7 +37,9 @@ def parse_json_payload(text: str) -> Any:
     candidates = [m.group(1) for m in _FENCE.finditer(text)] + [text]
     for chunk in candidates:
         chunk = chunk.strip()
-        for opener, closer in (("[", "]"), ("{", "}")):
+        # Try the bracket type that opens first, so {"a": []} isn't read as [].
+        pairs = sorted((("[", "]"), ("{", "}")), key=lambda p: (chunk.find(p[0]) % (len(chunk) + 1)))
+        for opener, closer in pairs:
             start, end = chunk.find(opener), chunk.rfind(closer)
             if start != -1 and end > start:
                 try:

@@ -6,6 +6,16 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from farmscout.geo.drive_time import CountyTable, DriveTimeModel, Place
+
+
+def _resolve(path: str, source_path: Path | None) -> Path:
+    """Paths in the config are relative to the repo root (the config file's parent folder)."""
+    p = Path(path)
+    if p.is_absolute() or source_path is None or p.exists():
+        return p
+    return source_path.resolve().parent.parent / p
+
 
 @dataclass(frozen=True)
 class HardFilters:
@@ -14,6 +24,7 @@ class HardFilters:
     max_acres: float
     allowed_states: tuple[str, ...]
     keep_unknowns: bool = True
+    max_drive_minutes_to_home: int | None = None
 
 
 @dataclass(frozen=True)
@@ -23,19 +34,28 @@ class ZoningClass:
 
 
 @dataclass(frozen=True)
+class SearchPlace:
+    name: str
+    state: str | None = None
+    county: str | None = None
+
+
+@dataclass(frozen=True)
 class SearchSettings:
     max_queries: int
     results_per_query: int
     property_types: tuple[str, ...]
-    places: tuple[str, ...]
+    places: tuple[SearchPlace, ...]
     listing_domains: tuple[str, ...]
     portal_domains: tuple[str, ...] = ()
+    max_portal_queries: int | None = None
     portal_property_types: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
 class RentCastSettings:
-    states: tuple[str, ...] = ("WA", "OR")
+    # Each area: a state code, {"state": ...}, or {"name", "lat", "lon", "radius"} (miles, max 100).
+    areas: tuple = ("WA", "OR")
     max_pages_per_state: int = 2
 
 
@@ -58,9 +78,13 @@ class FetchSettings:
 @dataclass(frozen=True)
 class Settings:
     hard_filters: HardFilters
-    counties_by_state: dict[str, tuple[str, ...]]
-    drive_minutes: dict[str, int]
+    home: Place
+    metros: tuple[Place, ...]
+    counties: CountyTable
+    drive_model: DriveTimeModel
     zoning_classes: tuple[ZoningClass, ...]
+    acreage_ideal: tuple[float, float]
+    land_max_price_usd: int | None
     weights: dict[str, float]
     penalties: dict[str, float]
     shortlist_threshold: float
@@ -70,6 +94,10 @@ class Settings:
     rentcast: RentCastSettings = RentCastSettings()
     redfin_csv_dir: Path = Path("data/inbox")
     source_path: Path | None = field(default=None, compare=False)
+
+    @property
+    def counties_by_state(self) -> dict[str, tuple[str, ...]]:
+        return self.counties.by_state()
 
     @classmethod
     def load(cls, path: str | Path) -> "Settings":
@@ -89,9 +117,17 @@ class Settings:
                 max_acres=float(hf["max_acres"]),
                 allowed_states=tuple(hf["allowed_states"]),
                 keep_unknowns=bool(hf.get("keep_unknowns", True)),
+                max_drive_minutes_to_home=hf.get("max_drive_minutes_to_home"),
             ),
-            counties_by_state={st: tuple(v["counties"]) for st, v in raw.get("regions", {}).items()},
-            drive_minutes={k: int(v) for k, v in raw.get("drive_minutes", {}).items()},
+            home=Place(**raw["home"]),
+            metros=tuple(Place(**m) for m in raw.get("metros", [])) or (Place(**raw["home"]),),
+            counties=CountyTable.load(_resolve(raw["geo"]["counties_file"], source_path)),
+            drive_model=DriveTimeModel(float(raw["geo"].get("road_factor", 1.2)), float(raw["geo"].get("mph", 60))),
+            land_max_price_usd=raw.get("land", {}).get("max_price_usd"),
+            acreage_ideal=(
+                float(raw.get("acreage", {}).get("ideal_min", hf["min_acres"])),
+                float(raw.get("acreage", {}).get("ideal_max", hf["max_acres"])),
+            ),
             zoning_classes=tuple(
                 ZoningClass(c["name"], tuple(c["patterns"])) for c in raw["zoning"]["classes"]
             ),
@@ -102,9 +138,10 @@ class Settings:
                 max_queries=int(s["max_queries"]),
                 results_per_query=int(s["results_per_query"]),
                 property_types=tuple(s["property_types"]),
-                places=tuple(s["places"]),
+                places=tuple(SearchPlace(p) if isinstance(p, str) else SearchPlace(**p) for p in s["places"]),
                 listing_domains=tuple(s.get("listing_domains", ())),
                 portal_domains=tuple(s.get("portal_domains", ())),
+                max_portal_queries=s.get("max_portal_queries"),
                 portal_property_types=tuple(s.get("portal_property_types", ())),
             ),
             llm=LLMSettings(l["model"], int(l["max_tokens"]), int(l["web_search_max_uses"])),
@@ -113,7 +150,7 @@ class Settings:
                 float(f["timeout_seconds"]), int(f["max_chars"]),
             ),
             rentcast=RentCastSettings(
-                states=tuple(raw.get("rentcast", {}).get("states", ("WA", "OR"))),
+                areas=tuple(raw.get("rentcast", {}).get("areas", raw.get("rentcast", {}).get("states", ("WA", "OR")))),
                 max_pages_per_state=int(raw.get("rentcast", {}).get("max_pages_per_state", 2)),
             ),
             redfin_csv_dir=Path(raw.get("inbox", {}).get("redfin_csv_dir", "data/inbox")),

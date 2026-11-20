@@ -78,3 +78,63 @@ class ListingStatusRule(HardRule):
         if status == "active":
             return self.passed("Listing confirmed active")
         return self.unknown("Listing status not confirmed")
+
+
+class HomeDistanceRule(HardRule):
+    """Out of range when the estimated drive to home (Seattle) exceeds the configured maximum."""
+
+    rule_id = "home_distance"
+
+    def __init__(self, max_minutes: int | None, home_name: str = "Seattle") -> None:
+        super().__init__()
+        self._max, self._home = max_minutes, home_name
+
+    def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
+        m = facts.drive_minutes_to_home
+        if self._max is None:
+            return self.passed("")
+        if m is None:
+            return self.unknown(f"Distance to {self._home} unknown")
+        if m <= self._max:
+            return self.passed(f"Within {self._max / 60:.0f} h of {self._home}")
+        return self.failed(f"~{m / 60:.1f} h from {self._home} (limit {self._max / 60:.0f} h)")
+
+
+class LandZoningRule(HardRule):
+    """Vacant land must be zoned so a venue/restaurant/sauna business can be permitted. Farm- or
+    forest-only land has no existing use to grandfather, so it's out."""
+
+    rule_id = "land_zoning"
+
+    def applies(self, facts: PropertyFacts) -> bool:
+        return facts.is_land
+
+    def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
+        z = facts.zoning_class
+        if z in {"farm_only", "forest_only"}:
+            return self.failed(f"Vacant land zoned '{facts.zoning}' (resource land): venue/restaurant not permittable")
+        if z == "commercial":
+            return self.passed(f"Vacant land zoned '{facts.zoning}' for commercial use")
+        if z == "mixed":
+            return self.passed(f"Vacant land zoned '{facts.zoning}': events likely by conditional use")
+        return self.unknown("Vacant land with zoning not confirmed: check the county zoning map")
+
+
+class LandPriceRule(HardRule):
+    """Vacant land must leave room in the budget to build."""
+
+    rule_id = "land_price"
+
+    def __init__(self, max_price_usd: int | None) -> None:
+        super().__init__()
+        self._max = max_price_usd
+
+    def applies(self, facts: PropertyFacts) -> bool:
+        return facts.is_land and self._max is not None
+
+    def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
+        if facts.price_usd is None:
+            return self.unknown("Land price not found")
+        if facts.price_usd <= self._max:
+            return self.passed(f"Land at ${facts.price_usd:,} leaves room to build")
+        return self.failed(f"Land at ${facts.price_usd:,} is over the ${self._max:,} land cap (leaves too little to build)")

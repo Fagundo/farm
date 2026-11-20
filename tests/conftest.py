@@ -6,7 +6,12 @@ import pytest
 
 from farmscout.config.settings import Settings
 from farmscout.domain.models import PropertyFacts, RawListing
-from farmscout.enrichment.enrichers import DriveTimeEnricher, EnrichmentChain, ZoningClassEnricher
+from farmscout.enrichment.enrichers import (
+    CountyFromCoordinatesEnricher,
+    DriveTimeEnricher,
+    EnrichmentChain,
+    ZoningClassEnricher,
+)
 from farmscout.fetching.fetcher import PageFetcher
 from farmscout.llm.base import LLMClient
 from farmscout.zoning.classifier import ZoningClassifier
@@ -24,7 +29,8 @@ def settings() -> Settings:
 def enricher(settings):
     return EnrichmentChain([
         ZoningClassEnricher(ZoningClassifier(settings.zoning_classes)),
-        DriveTimeEnricher(settings.drive_minutes),
+        CountyFromCoordinatesEnricher(settings.counties),
+        DriveTimeEnricher(settings.counties, settings.home, settings.metros, settings.drive_model),
     ])
 
 

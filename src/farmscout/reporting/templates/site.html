@@ -6,98 +6,138 @@
 <title>Farm &amp; Venue Property Scout</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;500;600&family=Nunito+Sans:opsz,wght@6..12,400;600;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: one column of ranked property rows under a sticky filter bar; summary tiles first. */
+/* Layout: a misty header (title, summary, filters) that scrolls away and is replaced by a slim
+   sticky bar; below it, one column of soft property cards. Palette: fog, sage moss, Sound blue. */
 :root {
-  --bg: #f3f5f2;
-  --surface: #ffffff;
-  --ink: #18221d;
-  --muted: #5d6b63;
-  --line: #d9e0db;
-  --accent: #2c5f4a;          /* Douglas-fir green */
-  --accent-soft: #e2ede7;
-  --good: #23764b;  --good-bg: #e3f3ea;
-  --warn: #9a6a00;  --warn-bg: #fbf1d9;
-  --bad: #a3392e;   --bad-bg: #f9e5e2;
-  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
-  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #f3f6f4;              /* fog */
+  --mist: #e6eeeb;            /* morning mist, top of page */
+  --surface: #fcfdfc;
+  --ink: #2f3c37;             /* wet basalt */
+  --muted: #6e7c76;
+  --line: #dfe6e2;
+  --accent: #4f7f6d;          /* sage moss */
+  --accent-soft: #e6efea;
+  --sky: #8aaabd;             /* Puget Sound on a grey day */
+  --sky-soft: #e8eff4;
+  --good: #3c7d5c;  --good-bg: #e4f1e9;
+  --warn: #9b742c;  --warn-bg: #f7efdd;
+  --bad: #ad5f55;   --bad-bg: #f7e8e5;
+  --shadow: 0 1px 2px rgba(47, 60, 55, .04), 0 6px 20px rgba(47, 60, 55, .05);
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #111814; --surface: #18211c; --ink: #e5ece7; --muted: #9aa9a0; --line: #2b3830;
-    --accent: #7fc4a2; --accent-soft: #20342a;
-    --good: #7fd3a3; --good-bg: #1c3427; --warn: #e5bd5c; --warn-bg: #3a3018; --bad: #f09a8f; --bad-bg: #3d221f;
+    --bg: #151c1a; --mist: #1b2522; --surface: #1c2522; --ink: #e3eae6; --muted: #9aa8a1; --line: #2b3732;
+    --accent: #8dc0aa; --accent-soft: #22322c; --sky: #7c9fb4; --sky-soft: #1f2a30;
+    --good: #86cfa5; --good-bg: #1d3328; --warn: #e2c07a; --warn-bg: #362f1d; --bad: #eaa49a; --bad-bg: #3a2522;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .25), 0 6px 20px rgba(0, 0, 0, .2);
     color-scheme: dark;
   }
+  :root:not([data-theme="light"]) .ridge { opacity: .14; }
 }
 :root[data-theme="dark"] {
-  --bg: #111814; --surface: #18211c; --ink: #e5ece7; --muted: #9aa9a0; --line: #2b3830;
-  --accent: #7fc4a2; --accent-soft: #20342a;
-  --good: #7fd3a3; --good-bg: #1c3427; --warn: #e5bd5c; --warn-bg: #3a3018; --bad: #f09a8f; --bad-bg: #3d221f;
+  --bg: #151c1a; --mist: #1b2522; --surface: #1c2522; --ink: #e3eae6; --muted: #9aa8a1; --line: #2b3732;
+  --accent: #8dc0aa; --accent-soft: #22322c; --sky: #7c9fb4; --sky-soft: #1f2a30;
+  --good: #86cfa5; --good-bg: #1d3328; --warn: #e2c07a; --warn-bg: #362f1d; --bad: #eaa49a; --bad-bg: #3a2522;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .25), 0 6px 20px rgba(0, 0, 0, .2);
   color-scheme: dark;
 }
+:root[data-theme="dark"] .ridge { opacity: .14; }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); }
-a { color: var(--accent); }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 64px; display: grid; gap: 20px; }
-header h1 { font: 700 30px/1.1 var(--font-display); margin: 0 0 6px; text-wrap: balance; letter-spacing: -0.01em; }
-header p { margin: 0; color: var(--muted); max-width: 70ch; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
-.tile b { display: block; font: 700 26px/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+body { background: linear-gradient(var(--mist), var(--bg) 420px) no-repeat, var(--bg); color: var(--ink);
+  font: 15px/1.55 var(--font-body); }
+a { color: var(--accent); text-underline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.wrap { max-width: 1060px; margin: 0 auto; padding: 0 20px 64px; display: grid; gap: 18px; }
+
+/* Top: title row with a collapse toggle; summary collapses smoothly. */
+.top { position: relative; padding-top: 28px; display: grid; gap: 14px; overflow: hidden; padding-bottom: 6px; margin-bottom: -6px; }
+.ridge { position: absolute; inset: 0 0 auto auto; width: min(520px, 70%); height: 120px; color: var(--sky);
+  opacity: .28; pointer-events: none; }
+.titlerow, .collapsible { position: relative; }
+.titlerow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: relative; }
+h1 { font: 500 32px/1.1 var(--font-display); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.toggle { margin-left: auto; font: 600 13px var(--font-body); color: var(--accent); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; box-shadow: var(--shadow); }
+.toggle:hover { border-color: var(--accent); }
+.collapsible { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .3s ease, opacity .3s ease; }
+.collapsible > div { overflow: hidden; display: grid; gap: 14px; }
+.top[data-collapsed="true"] .collapsible { grid-template-rows: 0fr; opacity: 0; }
+#intro { margin: 0; color: var(--muted); max-width: 72ch; position: relative; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; padding-bottom: 2px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; box-shadow: var(--shadow); }
+.tile b { display: block; font: 500 28px/1.15 var(--font-display); font-variant-numeric: tabular-nums; }
 .tile span { color: var(--muted); font-size: 13px; }
-.filters { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 10px 0; border-bottom: 1px solid var(--line);
-  display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; padding: 10px 0 14px;
+  border-bottom: 1px solid var(--line); }
 .filters label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .filters input[type=search], .filters select { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface);
-  border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
-.filters input[type=search] { min-width: 200px; }
+  border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; }
+.filters input[type=search] { min-width: 220px; }
 .filters input[type=range] { accent-color: var(--accent); }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-.seg button { font: inherit; font-size: 13px; border: 0; background: var(--surface); color: var(--ink); padding: 6px 10px; cursor: pointer; }
-.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.seg button { font: inherit; font-size: 13px; border: 0; background: transparent; color: var(--ink); padding: 7px 11px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
 .count { margin-left: auto; font-size: 13px; color: var(--muted); }
-.list { display: grid; gap: 12px; }
-.row { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
-  display: grid; grid-template-columns: 64px 1fr auto; gap: 4px 16px; align-items: start; }
-.row.dq { opacity: .6; }
-.score { grid-row: span 3; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
-  font: 700 20px var(--font-display); font-variant-numeric: tabular-nums; border: 4px solid var(--line); }
-.score.hi { border-color: var(--good); color: var(--good); }
-.score.mid { border-color: var(--warn); color: var(--warn); }
-.score.lo { border-color: var(--line); color: var(--muted); }
-.title { font: 600 18px/1.25 var(--font-display); margin: 0; text-wrap: balance; }
+
+/* Slim bar that slides in once the top has scrolled away. */
+.minibar { position: fixed; top: 0; left: 0; right: 0; z-index: 5; transform: translateY(-110%);
+  transition: transform .25s ease; background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); box-shadow: var(--shadow); }
+.minibar[data-show="true"] { transform: none; }
+.minibar .in { max-width: 1060px; margin: 0 auto; padding: 8px 20px; display: flex; align-items: center; gap: 12px; }
+.minibar b { font: 500 17px var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.minibar .active { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.minibar .toggle { box-shadow: none; flex: none; }
+
+.list { display: grid; gap: 14px; }
+.row { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; box-shadow: var(--shadow);
+  display: grid; grid-template-columns: 64px 1fr auto; gap: 5px 16px; align-items: start; }
+.row.dq { opacity: .55; }
+.score { grid-row: span 3; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;
+  font: 500 20px var(--font-display); font-variant-numeric: tabular-nums; border: 3px solid var(--line); background: var(--surface); }
+.score.hi { border-color: var(--good); color: var(--good); background: var(--good-bg); }
+.score.mid { border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
+.score.lo { color: var(--muted); }
+.title { font: 500 19px/1.3 var(--font-display); margin: 0; text-wrap: balance; }
 .title a { color: var(--ink); text-decoration: none; }
-.title a:hover { text-decoration: underline; }
+.title a:hover { color: var(--accent); }
 .meta { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
-.meta b { color: var(--ink); font-weight: 600; }
+.meta b { color: var(--ink); font-weight: 700; }
 .star { font-size: 22px; line-height: 1; background: none; border: 0; cursor: pointer; color: var(--line); padding: 4px; }
 .star[aria-pressed="true"] { color: var(--warn); }
 .meta, .chips { grid-column: 2 / 4; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.chip { font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.chip.land { background: var(--sky-soft); color: var(--ink); font-weight: 700; }
 .chip.new { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
 .chip.dq { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
 .chip.st-active { background: var(--good-bg); color: var(--good); font-weight: 600; }
 .chip.st-pending { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
 .chip.st-sold, .chip.st-off_market { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
-.research { grid-column: 2 / 4; font-size: 13px; border-left: 3px solid var(--accent); padding: 4px 0 4px 10px; color: var(--ink); }
+.research { grid-column: 2 / 4; font-size: 13px; background: var(--sky-soft); border-radius: 10px; padding: 8px 12px; color: var(--ink); }
 .research p { margin: 0 0 4px; max-width: 75ch; }
 .research .src { color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.chip.ln-ok { background: var(--good-bg); color: var(--good); }
+.chip.ln-broken, .chip.ln-wrong_property { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
+.chip.ln-blocked, .chip.ln-unreachable { background: var(--warn-bg); color: var(--warn); }
 .links { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; }
 .chip.z-commercial { background: var(--good-bg); color: var(--good); }
 .chip.z-farm_only, .chip.z-forest_only { background: var(--bad-bg); color: var(--bad); }
 .chip.z-mixed { background: var(--warn-bg); color: var(--warn); }
 .summary { grid-column: 2 / 4; margin: 2px 0 0; max-width: 75ch; }
 .notes { grid-column: 2 / 4; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 16px; font-size: 13px; }
-.notes h3 { font: 600 12px var(--font-display); text-transform: uppercase; letter-spacing: .05em; margin: 4px 0 2px; }
+.notes h3 { font: 700 11px var(--font-body); text-transform: uppercase; letter-spacing: .05em; margin: 4px 0 2px; }
 .notes ul { margin: 0; padding-left: 16px; }
 .notes .good h3 { color: var(--good); } .notes .bad h3 { color: var(--bad); } .notes .warn h3 { color: var(--warn); }
-.empty { padding: 32px; text-align: center; color: var(--muted); background: var(--surface); border-radius: 10px; border: 1px dashed var(--line); }
+.empty { padding: 32px; text-align: center; color: var(--muted); background: var(--surface); border-radius: 16px; border: 1px dashed var(--line); }
 footer { color: var(--muted); font-size: 13px; }
 @media (max-width: 560px) {
   .row { grid-template-columns: 48px 1fr; }
@@ -106,37 +146,64 @@ footer { color: var(--muted); font-size: 13px; }
   .meta, .chips, .summary, .notes, .research, .links { grid-column: 1 / -1; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 560px) { h1 { font-size: 26px; } .minibar .active { display: none; } .filters input[type=search] { min-width: 0; flex: 1 1 100%; } }
 </style>
 </head>
 <body>
+<div class="minibar" id="minibar" data-show="false" aria-hidden="true">
+  <div class="in">
+    <b>Farm &amp; Venue Scout</b>
+    <span class="active" id="barActive"></span>
+    <span class="count" id="barCount"></span>
+    <button type="button" class="toggle" id="barFilters" tabindex="-1">Filters &amp; summary</button>
+  </div>
+</div>
+
 <div class="wrap">
-  <header>
-    <h1>Farm &amp; Venue Property Scout</h1>
-    <p id="intro"></p>
-  </header>
-
-  <section class="tiles" aria-label="Summary" id="tiles"></section>
-
-  <section class="filters" aria-label="Filters">
-    <input type="search" id="q" placeholder="Search town, county, feature…" aria-label="Search">
-    <div class="seg" role="group" aria-label="State" id="state">
-      <button type="button" data-v="" aria-pressed="true">All</button>
-      <button type="button" data-v="WA" aria-pressed="false">WA</button>
-      <button type="button" data-v="OR" aria-pressed="false">OR</button>
+  <header class="top" id="top" data-collapsed="false">
+    <svg class="ridge" viewBox="0 0 520 120" preserveAspectRatio="xMaxYMin meet" aria-hidden="true">
+      <path fill="currentColor" d="M0 120 L60 88 L95 96 L150 62 L190 80 L240 40 L262 52 L300 18 L322 30 L345 22 L380 58 L420 46 L470 76 L520 64 L520 120 Z"/>
+      <path fill="currentColor" opacity=".5" d="M0 120 L80 100 L130 108 L200 86 L260 98 L330 80 L400 96 L460 88 L520 98 L520 120 Z"/>
+    </svg>
+    <div class="titlerow">
+      <h1>Farm &amp; Venue Property Scout</h1>
+      <button type="button" class="toggle" id="toggleTop" aria-expanded="true" aria-controls="topBody">Collapse</button>
     </div>
-    <label for="minScore">Min score <input type="range" id="minScore" min="0" max="100" step="5" value="0"> <output id="minScoreOut">0</output></label>
-    <label for="sort">Sort
-      <select id="sort">
-        <option value="score">Best fit</option>
-        <option value="price">Lowest price</option>
-        <option value="acres">Most acres</option>
-        <option value="drive">Closest to a city</option>
-      </select>
-    </label>
-    <label for="starred"><input type="checkbox" id="starred"> Starred</label>
-    <label for="showDq"><input type="checkbox" id="showDq"> Show ruled out</label>
-    <span class="count" id="count" aria-live="polite"></span>
-  </section>
+    <div class="collapsible" id="topBody">
+      <div>
+        <p id="intro"></p>
+        <section class="tiles" aria-label="Summary" id="tiles"></section>
+        <section class="filters" aria-label="Filters">
+          <input type="search" id="q" placeholder="Search town, county, feature…" aria-label="Search">
+          <div class="seg" role="group" aria-label="State" id="state">
+            <button type="button" data-v="" aria-pressed="true">All</button>
+            <button type="button" data-v="WA" aria-pressed="false">WA</button>
+            <button type="button" data-v="OR" aria-pressed="false">OR</button>
+            <button type="button" data-v="ID" aria-pressed="false">ID</button>
+            <button type="button" data-v="MT" aria-pressed="false">MT</button>
+            <button type="button" data-v="CA" aria-pressed="false">CA</button>
+          </div>
+          <div class="seg" role="group" aria-label="Property type" id="ptype">
+            <button type="button" data-v="" aria-pressed="true">Any</button>
+            <button type="button" data-v="improved" aria-pressed="false">With buildings</button>
+            <button type="button" data-v="land" aria-pressed="false">Land</button>
+          </div>
+          <label for="minScore">Min score <input type="range" id="minScore" min="0" max="100" step="5" value="0"> <output id="minScoreOut">0</output></label>
+          <label for="sort">Sort
+            <select id="sort">
+              <option value="score">Best fit</option>
+              <option value="drive">Closest to Seattle</option>
+              <option value="price">Lowest price</option>
+              <option value="acres">Most acres</option>
+            </select>
+          </label>
+          <label for="starred"><input type="checkbox" id="starred"> Starred</label>
+          <label for="showDq"><input type="checkbox" id="showDq"> Show ruled out</label>
+          <span class="count" id="count" aria-live="polite"></span>
+        </section>
+      </div>
+    </div>
+  </header>
 
   <section class="list" id="list" aria-label="Properties"></section>
 
@@ -149,7 +216,8 @@ footer { color: var(--muted); font-size: 13px; }
   "use strict";
   var DATA = JSON.parse(document.getElementById("data").textContent);
   var rows = DATA.candidates;
-  var state = { q: "", st: "", min: 0, sort: "score", starred: false, dq: false };
+  var state = { q: "", st: "", pt: "", min: 0, sort: "score", starred: false, dq: false };
+  function isLand(r) { return r.property_type ? r.property_type === "land" : (r.dwellings === 0 && r.has_barn === false); }
 
   var STAR_KEY = "farmscout-stars";
   var stars = {};
@@ -164,13 +232,28 @@ footer { color: var(--muted); font-size: 13px; }
   var STATUS = { active: "Active", pending: "Pending", sold: "Sold", off_market: "Off market" };
   function host(u) { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return "source"; } }
   function link(r) { return r.canonical_url || r.url; }
+  var LINK = { ok: "Link checked", broken: "Link broken", wrong_property: "Link shows a different page",
+               blocked: "Link not verifiable", unreachable: "Site didn't respond" };
+  // Street address from a title like "Barn on 7 acres, 1503 Maple Valley Rd SW, Olympia".
+  function address(r) {
+    var m = /\b\d{2,6}\s+[^,]+(?:,\s*[A-Za-z .'-]+)?/.exec(r.title || "");
+    return m ? m[0] + (r.state ? ", " + r.state : "") : null;
+  }
+  function searchLinks(r) {
+    var a = address(r); if (!a) return "";
+    var z = "https://www.zillow.com/homes/" + encodeURIComponent(a.replace(/[,\s]+/g, "-")) + "_rb/";
+    var g = "https://www.google.com/search?q=" + encodeURIComponent(a + " for sale");
+    return '<a href="' + esc(z) + '" target="_blank" rel="noopener">Find on Zillow</a>' +
+           '<a href="' + esc(g) + '" target="_blank" rel="noopener">Search the web</a>';
+  }
+  function hrs(m) { return m < 60 ? m + " min" : (Math.round(m / 6) / 10) + " h"; }
   function day(iso) { return iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""; }
   var ZLABEL = { commercial: "Commercial zoning", mixed: "Mixed / conditional", farm_only: "Farm-only zoning",
                  forest_only: "Forest zoning", other: "Zoning: check code" };
 
   function intro() {
     var d = new Date(DATA.generated);
-    $("intro").textContent = "Pacific Northwest properties that could hold a farm, a sauna and an event space or farm-to-table dinners, scored 0–100 against the search rules. Updated " +
+    $("intro").textContent = "Properties in Washington, Oregon, Idaho, western Montana and far northern California that could hold a farm, a sauna and an event space or farm-to-table dinners, scored 0–100 with closeness to Seattle weighted heavily. Updated " +
       d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) + ".";
     var ok = rows.filter(function (r) { return !r.disqualified; });
     var short = ok.filter(function (r) { return r.score >= DATA.threshold; });
@@ -183,14 +266,15 @@ footer { color: var(--muted); font-size: 13px; }
       [ok.filter(function (r) { return r.listing_status === "active"; }).length, "confirmed still for sale"],
       [median ? "$" + Math.round(median / 1000) + "k" : "–", "median asking price"]
     ].map(function (t) { return '<div class="tile"><b>' + esc(t[0]) + "</b><span>" + esc(t[1]) + "</span></div>"; }).join("");
-    $("footer").innerHTML = "Scores reward zoning or existing permits that allow events (30 pts), an operating venue or winery (15), water rights, a creek or river for a cold plunge, " +
-      "drive time, big outbuildings, a commercial kitchen, a second home and road access. Missing details score zero and appear under <i>To verify</i>. " +
-      "Listings are as advertised; confirm zoning with the county before relying on a score. Stars are saved in this browser only.";
+    $("footer").innerHTML = "Scores reward zoning or existing permits that allow events (30 pts), closeness to Seattle (20), an operating venue or winery (15), water rights, a creek or river for a cold plunge, " +
+      "a nearby city for guests, big outbuildings, a commercial kitchen, a second home and road access. Missing details score zero and appear under <i>To verify</i>. " +
+      "Vacant land is scored on zoning and build readiness (power, water, septic, access) instead of buildings, must be zoned for the use, and must leave room in the budget to build. Drive times are estimates. Listings are as advertised; confirm zoning with the county before relying on a score. Each run checks that every link opens its property and re-confirms that it is still for sale. If a link fails, use Find on Zillow or Search the web. Stars are saved in this browser only.";
   }
 
   function matches(r) {
     if (!state.dq && r.disqualified) return false;
     if (state.st && r.state !== state.st) return false;
+    if (state.pt && (state.pt === "land") !== isLand(r)) return false;
     if (r.score < state.min) return false;
     if (state.starred && !stars[r.url]) return false;
     if (state.q) {
@@ -205,7 +289,7 @@ footer { color: var(--muted); font-size: 13px; }
     score: function (a, b) { return b.score - a.score; },
     price: function (a, b) { return (a.price_usd || 9e9) - (b.price_usd || 9e9); },
     acres: function (a, b) { return (b.acres || 0) - (a.acres || 0); },
-    drive: function (a, b) { return (a.drive_minutes_to_metro || 999) - (b.drive_minutes_to_metro || 999); }
+    drive: function (a, b) { return (a.drive_minutes_to_home || 9999) - (b.drive_minutes_to_home || 9999); }
   };
 
   function list(items, cls, title) {
@@ -217,16 +301,26 @@ footer { color: var(--muted); font-size: 13px; }
   function render() {
     var shown = rows.filter(matches).sort(SORTS[state.sort]);
     $("count").textContent = shown.length + " of " + rows.length + " shown";
+    $("barCount").textContent = shown.length + " shown";
+    var active = [state.st || "All states", state.pt === "land" ? "land" : state.pt ? "with buildings" : "", state.min ? "score " + state.min + "+" : "",
+                  state.q ? "“" + state.q + "”" : "", state.starred ? "starred" : "",
+                  $("sort").selectedOptions[0].textContent].filter(Boolean);
+    $("barActive").textContent = active.join(" · ");
     if (!shown.length) { $("list").innerHTML = '<div class="empty">No properties match these filters. Lower the minimum score or clear the search.</div>'; return; }
     $("list").innerHTML = shown.map(function (r) {
       var loc = [r.city, r.county && r.county + " Co.", r.state].filter(Boolean).join(", ");
       var meta = ["<b>" + money(r.price_usd) + "</b>",
                   r.acres != null ? "<b>" + r.acres + "</b> acres" : "Acres ?",
                   esc(loc || "Location ?"),
-                  r.drive_minutes_to_metro != null ? "~" + r.drive_minutes_to_metro + " min to Seattle/Portland" : ""].filter(Boolean);
+                  r.drive_minutes_to_home != null ? "<b>~" + hrs(r.drive_minutes_to_home) + "</b> to Seattle" : "",
+                  r.nearest_metro && r.nearest_metro !== "Seattle" && r.drive_minutes_to_metro != null
+                    ? "~" + hrs(r.drive_minutes_to_metro) + " to " + esc(r.nearest_metro) : ""].filter(Boolean);
       var chips = [];
       if (r.disqualified) chips.push('<span class="chip dq">Ruled out</span>');
       if (r.listing_status) chips.push('<span class="chip st-' + esc(r.listing_status) + '">' + esc(STATUS[r.listing_status] || r.listing_status) + "</span>");
+      if (r.link_status) chips.push('<span class="chip ln-' + esc(r.link_status) + '">' + esc(LINK[r.link_status] || r.link_status) +
+        (r.link_checked_at ? " " + esc(day(r.link_checked_at)) : "") + "</span>");
+      if (isLand(r)) chips.push('<span class="chip land">Vacant land</span>');
       if (r.new) chips.push('<span class="chip new">New</span>');
       if (r.zoning_class) chips.push('<span class="chip z-' + esc(r.zoning_class) + '">' + esc(ZLABEL[r.zoning_class] || r.zoning_class) + (r.zoning ? " · " + esc(r.zoning) : "") + "</span>");
       (r.existing_uses || []).forEach(function (u) { chips.push('<span class="chip">' + esc(u) + "</span>"); });
@@ -244,7 +338,8 @@ footer { color: var(--muted); font-size: 13px; }
             return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(host(u)) + "</a>"; }).join("") + "</div></div>" : "") +
         '<div class="notes">' + list(r.strengths, "good", "Strengths") + list(r.red_flags, "bad", "Red flags") + list(r.to_verify, "warn", "To verify") + "</div>" +
         '<div class="links"><a href="' + esc(link(r)) + '" target="_blank" rel="noopener">Open listing (' + esc(host(link(r))) + ")</a>" +
-          (r.canonical_url && r.canonical_url !== r.url ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">Where it was found (' + esc(host(r.url)) + ")</a>" : "") + "</div>" +
+          (r.canonical_url && r.canonical_url !== r.url ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">Where it was found (' + esc(host(r.url)) + ")</a>" : "") +
+          searchLinks(r) + "</div>" +
         "</article>";
     }).join("");
   }
@@ -260,6 +355,12 @@ footer { color: var(--muted); font-size: 13px; }
     Array.prototype.forEach.call(this.children, function (c) { c.setAttribute("aria-pressed", String(c === b)); });
     render();
   });
+  $("ptype").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    state.pt = b.dataset.v;
+    Array.prototype.forEach.call(this.children, function (c) { c.setAttribute("aria-pressed", String(c === b)); });
+    render();
+  });
   $("list").addEventListener("click", function (e) {
     var b = e.target.closest(".star"); if (!b) return;
     var u = b.dataset.url;
@@ -267,6 +368,36 @@ footer { color: var(--muted); font-size: 13px; }
     saveStars();
     b.setAttribute("aria-pressed", String(!!stars[u]));
     if (state.starred) render();
+  });
+
+  // Collapsible top. Collapsing is remembered per browser; the slim bar appears once the top
+  // has scrolled out of view, and its button brings the full top back.
+  var TOP_KEY = "farmscout-top-collapsed";
+  function setCollapsed(on) {
+    $("top").dataset.collapsed = String(on);
+    $("toggleTop").textContent = on ? "Show summary & filters" : "Collapse";
+    $("toggleTop").setAttribute("aria-expanded", String(!on));
+    try { localStorage.setItem(TOP_KEY, on ? "1" : "0"); } catch (e) {}
+  }
+  try { if (localStorage.getItem(TOP_KEY) === "1") setCollapsed(true); } catch (e) {}
+  $("toggleTop").addEventListener("click", function () { setCollapsed($("top").dataset.collapsed !== "true"); });
+
+  var bar = $("minibar"), ticking = false;
+  function onScroll() {
+    ticking = false;
+    var topBottom = $("top").getBoundingClientRect().bottom;
+    bar.dataset.show = String(topBottom < 8);            // the top has scrolled away
+    bar.setAttribute("aria-hidden", String(bar.dataset.show !== "true"));
+    $("barFilters").tabIndex = bar.dataset.show === "true" ? 0 : -1;
+  }
+  window.addEventListener("scroll", function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+  }, { passive: true });
+  $("barFilters").addEventListener("click", function () {
+    setCollapsed(false);
+    var smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
+    setTimeout(function () { $("q").focus({ preventScroll: true }); }, smooth ? 400 : 0);
   });
 
   intro();
