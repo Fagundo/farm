@@ -27,11 +27,8 @@ def settings() -> Settings:
 
 @pytest.fixture
 def enricher(settings):
-    return EnrichmentChain([
-        ZoningClassEnricher(ZoningClassifier(settings.zoning_classes)),
-        CountyFromCoordinatesEnricher(settings.counties),
-        DriveTimeEnricher(settings.counties, settings.home, settings.metros, settings.drive_model),
-    ])
+    from farmscout.app.container import build_enricher
+    return build_enricher(settings)
 
 
 def fixture_text(name: str) -> str:

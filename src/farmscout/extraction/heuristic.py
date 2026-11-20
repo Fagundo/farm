@@ -5,7 +5,10 @@ from __future__ import annotations
 import re
 
 from farmscout.domain.models import PropertyFacts, RawListing
+from farmscout.business.setting import SettingDetector
 from farmscout.extraction.base import FactExtractor, listing_text
+
+_SETTING = SettingDetector()
 
 _PRICE = re.compile(r"\$\s?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*(million|mil|m\b|k\b)?", re.I)
 _ACRES = re.compile(r"(\d{1,4}(?:\.\d+)?)\s*(?:\+/-\s*|±\s*)?(?:acres?|ac\b)", re.I)
@@ -23,10 +26,13 @@ _SQFT_BLDG = re.compile(
 
 _USES = {
     "winery": r"\bwinery\b", "tasting room": r"tasting room", "event venue": r"event (?:venue|center|space)",
-    "wedding venue": r"wedding", "restaurant": r"\brestaurant\b|\bcafe\b", "retreat center": r"retreat",
+    "wedding venue": r"wedding", "restaurant": r"\brestaurant\b|\bbistro\b", "cafe": r"\bcaf[eé]\b|coffee (?:shop|house)", "retreat center": r"retreat",
     "bed and breakfast": r"bed (?:and|&) breakfast|\bB&B\b", "lodge": r"\blodge\b", "inn": r"\binn\b",
     "cidery": r"cidery", "brewery": r"brewery", "distillery": r"distillery", "farm stand": r"farm stand",
     "campground": r"campground|\bRV park\b", "guest ranch": r"guest ranch",
+    "glamping": r"glamping|\byurts?\b", "hot springs": r"hot springs?",
+    "spa": r"day spa|\bspa (?:business|building|facility|and wellness)|wellness (?:center|retreat|spa)|massage studio",
+    "bathhouse": r"bath ?house|public sauna|sauna (?:business|house)|soaking tubs",
 }
 _WATER = {
     "creek": r"\bcreek\b", "river": r"\briver(?:front| frontage)?\b", "pond": r"\bpond\b",
@@ -122,6 +128,7 @@ class HeuristicExtractor(FactExtractor):
             has_power=power,
             has_public_water=public_water,
             septic=septic,
+            setting=_SETTING.detect(text),
             in_floodplain=True if _any(r"flood ?plain|flood zone", text) else None,
             has_hoa=has_hoa,
         )

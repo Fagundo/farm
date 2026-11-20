@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from farmscout.domain.models import PropertyFacts, RuleOutcome
 from farmscout.rules.base import PenaltyRule
+from farmscout.business.uses import DEFAULT_BUSINESS_USES, BusinessUseCatalog
 from farmscout.rules.soft import hospitality_uses
 
 
@@ -39,7 +40,11 @@ class SharedRoadPenalty(PenaltyRule):
 class FarmOnlyNoExistingUsePenalty(PenaltyRule):
     rule_id = "farm_only_no_existing_use"
 
+    def __init__(self, max_points: float, catalog: BusinessUseCatalog | None = None) -> None:
+        super().__init__(max_points)
+        self._catalog = catalog or BusinessUseCatalog(DEFAULT_BUSINESS_USES)
+
     def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
-        if facts.zoning_class in {"farm_only", "forest_only"} and not hospitality_uses(facts):
-            return self.triggered(f"Resource zoning ('{facts.zoning}') with no grandfathered venue use")
+        if facts.zoning_class in {"farm_only", "forest_only"} and not hospitality_uses(facts, self._catalog):
+            return self.triggered(f"Resource zoning ('{facts.zoning}') with no grandfathered venue, food or spa use")
         return self.clear()
