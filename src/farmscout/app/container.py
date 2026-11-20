@@ -31,6 +31,8 @@ from farmscout.storage.repository import SqliteCandidateRepository, normalize_ur
 from farmscout.research.claude_researcher import ClaudeResearcher
 from farmscout.research.file_researcher import FileResearcher
 from farmscout.research.stage import ResearchPolicy, ResearchStage
+from farmscout.verification.link_checker import LinkChecker
+from farmscout.verification.stage import VerificationStage
 from farmscout.zoning.classifier import ZoningClassifier
 
 log = logging.getLogger("farmscout")
@@ -150,6 +152,7 @@ def build_research_stage(
     db_path: Path,
     from_file: Path | None = None,
     policy: ResearchPolicy = ResearchPolicy(),
+    mode: str = "full",
 ) -> ResearchStage | None:
     """Claude-backed research, or replay of saved findings when ``from_file`` is given."""
     selector = None
@@ -163,9 +166,15 @@ def build_research_stage(
         if llm is None:
             log.warning("Skipping research: ANTHROPIC_API_KEY not set")
             return None
-        researcher = ClaudeResearcher(llm)
+        researcher = ClaudeResearcher(llm, mode)
     return ResearchStage(researcher, build_enricher(settings), build_engine(settings),
                          SqliteCandidateRepository(db_path), policy, selector)
+
+
+def build_verification_stage(settings: Settings, *, db_path: Path) -> VerificationStage:
+    fetcher = HttpPageFetcher(settings.fetch, on_error=lambda url, exc: None)
+    return VerificationStage(LinkChecker(fetcher), build_enricher(settings), build_engine(settings),
+                             SqliteCandidateRepository(db_path))
 
 
 def build_pipeline(

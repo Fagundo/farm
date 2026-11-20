@@ -61,21 +61,33 @@ jobs:
           fi
           farmscout run --sources "$SOURCES" --limit "$LIMIT" $REFRESH | tee run.log
 
+      - name: Check links and status
+        # Every candidate's link must load and show that property; pages that say sold/pending
+        # update the status. Then Claude re-confirms status/price for anything not checked in
+        # 3 days and finds a working MLS-mirror link for broken ones.
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          farmscout verify | tee -a run.log
+          farmscout research --mode status --top 200 --max-age-days 3 | tee -a run.log
+
       - name: Research top candidates
-        # Confirms each listing is still for sale, finds a working link, and fills zoning,
-        # water, floodplain and building details from county records and other sites.
+        # Fills zoning, water, floodplain and building details from county records and other sites.
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           RESEARCH_TOP: ${{ inputs.research_top || '15' }}
         if: ${{ inputs.research_top != '0' }}
         run: farmscout research --top "$RESEARCH_TOP" | tee -a run.log
 
+      - name: Re-check fixed links
+        run: farmscout verify | tee -a run.log
+
       - name: Summary
         run: |
           {
             echo "## Scout run"
             echo '```'
-            grep -E "^(Discovered|Researched|  )" run.log || true
+            grep -E "^(Discovered|Researched|Checked|  )" run.log || true
             echo '```'
             sed -n '1,30p' reports/candidates-$(date -u +%F).md
           } >> "$GITHUB_STEP_SUMMARY"

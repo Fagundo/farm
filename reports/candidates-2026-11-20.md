@@ -1,26 +1,43 @@
 # Property candidates — November 20, 2026
 
-15 properties passed the hard filters; 3 scored 55+ (shortlist). 15 are new this run.
+14 properties passed the hard filters; 3 scored 55+ (shortlist). 14 are new this run.
 
 | # | Score | New | Property | Price | Acres | Location | Zoning |
 |---|---|---|---|---|---|---|---|
-| 1 | 59 | ★ | [Wedding-venue home on 7+ acres, 1503 Maple Valley Rd SW, Oly](https://www.homes77.com/property/2603775/) | $895,000 | 7.3 | Thurston Co., WA | ? |
-| 2 | 56 | ★ | [Event venue + 6,000 sq ft commercial building, 3605 Jackson ](https://www.homes77.com/property/2541643/) | $894,900 | ? | Lewis Co., WA | ? |
+| 1 | 61 | ★ | [Event venue + 6,000 sq ft commercial building, 3605 Jackson ](https://www.homes77.com/property/2541643/) | $894,900 | 7.78 | Lewis Co., WA | ? |
+| 2 | 59 | ★ | [Wedding-venue home on 7+ acres, 1503 Maple Valley Rd SW, Oly](https://www.homes77.com/property/2603775/) | $895,000 | 7.3 | Thurston Co., WA | ? |
 | 3 | 55 | ★ | [Calapooia riverfront, former Round-Up grounds, zoned Agri-Bu](https://eugenefinehomes.realgeeks.com/property/676110118/) | $895,000 | 8.28 | Linn Co., OR | AB (Agri-Business) |
 | 4 | 38 | ★ | [6.66 acres zoned Rural Commercial on Hwy 101, Sequim](https://commercial.century21.com/listing/999-b-highway-101-sequim-wa-98382-REN033165884) | $399,950 | 6.66 | Clallam Co., WA | Rural Commercial (RC) |
 | 5 | 36 | ★ | [24-acre equestrian property with arena and shop, 21110 Bucod](https://www.homes77.com/property/2550336/) | $625,000 | 24.38 | Thurston Co., WA | ? |
-| 6 | 31 | ★ | [117-acre farm with 3 homes, 1378 Ocean Beach Rd, Hoquiam](https://www.homes77.com/property/2554155/) | $979,000 | 117 | Grays Harbor Co., WA | ? |
+| 6 | 31 | ★ | [117-acre farm with 3 homes, 1378 Ocean Beach Rd, Hoquiam](https://www.pnwresidences.com/property-search/detail/69/2554155/1378-ocean-beach-rd-hoquiam-wa-98550/) | $979,000 | 118.41 | Grays Harbor Co., WA | ? |
 | 7 | 31 | ★ | [10-acre Whidbey farm with historic barn, 891 West Beach Rd, ](https://www.homes77.com/property/2604798/) | $833,000 | 10.02 | Island Co., WA | ? |
-| 8 | 28 | ★ | [29.56-acre hobby farm, 603 Gish Rd, Onalaska](https://www.homes77.com/property/2556620/) | $750,000 | 29.56 | Lewis Co., WA | RDD |
+| 8 | 28 | ★ | [29.56-acre hobby farm, 603 Gish Rd, Onalaska](https://www.pnwresidences.com/property-search/detail/69/2556620/603-gish-rd-onalaska-wa-98570/) | $750,000 | 29.56 | Lewis Co., WA | RDD |
 | 9 | 28 | ★ | [19+ acres with barn and multi-unit home, Slater Rd, Ferndale](https://www.homes77.com/property/2602503/) | $849,950 | 19 | Whatcom Co., WA | ? |
 | 10 | 27 | ★ | [20-acre hobby farm with water rights, 24291 SW Rogers Rd, Sh](https://farmandranch.com/property/20-acre-hobby-farm-with-water-rights) | $899,000 | 20 | Yamhill Co., OR | EF-80 |
 | 11 | 24 | ★ | [34 acres with I-5 frontage, 440 Knowles Rd, Winlock](https://www.land.com/property/440-knowles-road-winlock-washington-98596/27693878/) | $650,000 | 34 | Lewis Co., WA | ? |
-| 12 | 24 | ★ | [U-pick blueberry farm on a spring-fed lake, 30431 38th Ave S](https://www.homes77.com/property/2405143/) | $750,000 | 5 | King Co., WA | ? |
-| 13 | 24 | ★ | [20-acre equestrian estate, 32408 146th Ave E, Graham](https://www.homes77.com/property/2493078/) | $999,000 | 20 | Pierce Co., WA | ? |
-| 14 | 24 | ★ | [1923 farmhouse on 12 acres with Columbia River access, Clats](https://www.landwatch.com/columbia-county-oregon-farms-and-ranches-for-sale/pid/427540452) | $590,000 | 11.9 | Columbia Co., OR | ? |
-| 15 | 11 | ★ | [10-acre riverside mini farm with water rights, 37625 Sunset ](https://www.coldwellbankerhomes.com/or/brownsville/37625-sunset-ln/pid_72112264/) | $590,000 | 10 | Linn Co., OR | FF |
+| 12 | 24 | ★ | [1923 farmhouse on 12 acres with Columbia River access, Clats](https://www.landwatch.com/columbia-county-oregon-farms-and-ranches-for-sale/pid/427540452) | $590,000 | 11.9 | Columbia Co., OR | ? |
+| 13 | 21 | ★ | [U-pick blueberry farm on a spring-fed lake, 30431 38th Ave S](https://www.pnwresidences.com/property-search/detail/69/2405143/30431-38th-ave-s-auburn-wa-98001/) | $777,000 | 3.27 | King Co., WA | ? |
+| 14 | 11 | ★ | [10-acre riverside mini farm with water rights, 37625 Sunset ](https://www.coldwellbankerhomes.com/or/brownsville/37625-sunset-ln/pid_72112264/) | $590,000 | 10 | Linn Co., OR | FF |
 
-## 1. Wedding-venue home on 7+ acres, 1503 Maple Valley Rd SW, Olympia — 59/100
+## 1. Event venue + 6,000 sq ft commercial building, 3605 Jackson Hwy, Chehalis — 61/100
+
+Operating wedding/event and catering business (listing cites $150k gross income) with a 6,000 sq ft commercial building and large greenhouse. Acreage, zoning and water not stated.
+
+**Strengths**
+- Existing use (event venue, wedding venue) suggests permits already in place
+- Operating/permitted use: event venue, wedding venue
+- Large outbuilding (~6,000 sq ft) for events or a kitchen
+- 7.78 acres is in the ideal 5–80 range
+
+**To verify**
+- Water rights / well not mentioned
+- Road access not described
+
+**Research:** This is The Barn on Jackson: a 6,000 sq ft 1940s bank barn hosting weddings for up to 300 guests, with a 6-bedroom farmhouse. County parcel 017192005000 is 7.78 acres in current-use agriculture.
+
+[Listing](https://www.homes77.com/property/2541643/)
+
+## 2. Wedding-venue home on 7+ acres, 1503 Maple Valley Rd SW, Olympia — 59/100
 
 Hosts weddings already (no permit mentioned); garage set up for catering prep with commercial fridge, sinks; pool, outdoor kitchen, outdoor restrooms. Water source and zoning not stated.
 
@@ -34,24 +51,6 @@ Hosts weddings already (no permit mentioned); garage set up for catering prep wi
 - Road access not described
 
 [Listing](https://www.homes77.com/property/2603775/)
-
-## 2. Event venue + 6,000 sq ft commercial building, 3605 Jackson Hwy, Chehalis — 56/100
-
-Operating wedding/event and catering business (listing cites $150k gross income) with a 6,000 sq ft commercial building and large greenhouse. Acreage, zoning and water not stated.
-
-**Strengths**
-- Existing use (event venue, wedding venue) suggests permits already in place
-- Operating/permitted use: event venue, wedding venue
-- Large outbuilding (~6,000 sq ft) for events or a kitchen
-
-**To verify**
-- Acreage not found — target 2–160 acres
-- Water rights / well not mentioned
-- Number of dwellings unclear
-- Road access not described
-- Acreage unknown
-
-[Listing](https://www.homes77.com/property/2541643/)
 
 ## 3. Calapooia riverfront, former Round-Up grounds, zoned Agri-Business, 38050 Hwy 228 — 55/100
 
@@ -102,6 +101,7 @@ Bare wooded land; RC zoning allows restaurant, motel, campground. Currently PEND
 - Has water frontage — check FEMA flood maps
 
 **Research:** Listing confirms private low-bank riverfront access; river not named.
+Another listing page shows $699,950 (listed Jun 27, 2026); homes77 shows $625,000. Confirm the current price with the agent.
 
 [Listing](https://www.homes77.com/property/2550336/)
 
@@ -118,7 +118,9 @@ Working farm with 3 homes, two wells, barns, mobile slaughter unit; listing pitc
 - Road access not described
 - Has water frontage — check FEMA flood maps
 
-[Listing](https://www.homes77.com/property/2554155/)
+**Research:** Active at $979,000, 118.41 acres (MLS 2554155).
+
+[Listing](https://www.pnwresidences.com/property-search/detail/69/2554155/1378-ocean-beach-rd-hoquiam-wa-98550/)
 
 ## 7. 10-acre Whidbey farm with historic barn, 891 West Beach Rd, Coupeville — 31/100
 
@@ -146,7 +148,9 @@ Large hay barn, implement shed, shop with canning kitchen. RDD zoning per listin
 - Water rights / well not mentioned
 - Road access not described
 
-[Listing](https://www.homes77.com/property/2556620/)
+**Research:** Active at $750,000 after a 9.5% cut (MLS 2556620); 29.56 acres across two parcels.
+
+[Listing](https://www.pnwresidences.com/property-search/detail/69/2556620/603-gish-rd-onalaska-wa-98570/)
 
 ## 9. 19+ acres with barn and multi-unit home, Slater Rd, Ferndale — 28/100
 
@@ -201,42 +205,7 @@ Bare fenced land with well, septic, power and a creek; marketed for commercial, 
 
 [Listing](https://www.land.com/property/440-knowles-road-winlock-washington-98596/27693878/)
 
-## 12. U-pick blueberry farm on a spring-fed lake, 30431 38th Ave S, Auburn — 24/100
-
-Established organic U-pick blueberry farm (2,100 bushes) with lake and stream; no house, building site on plateau.
-
-**Strengths**
-- Natural water: lake, creek
-- ~40 min to a metro
-- 5 acres is in the ideal 5–80 range
-
-**To verify**
-- Zoning not found — check county GIS for commercial/conditional uses
-- Water rights / well not mentioned
-- Road access not described
-- Has water frontage — check FEMA flood maps
-
-**Research:** Description says about 5 acres but the recorded lot size is 142,623 sq ft (about 3.3 acres); confirm with the broker.
-
-[Listing](https://www.homes77.com/property/2405143/)
-
-## 13. 20-acre equestrian estate, 32408 146th Ave E, Graham — 24/100
-
-7,200 sq ft arena, 2,400 sq ft shop, 2,160 sq ft barn, trails; DADU/STR potential.
-
-**Strengths**
-- ~50 min to a metro
-- Large outbuilding (~7,200 sq ft) for events or a kitchen
-- 20 acres is in the ideal 5–80 range
-
-**To verify**
-- Zoning not found — check county GIS for commercial/conditional uses
-- Water rights / well not mentioned
-- Road access not described
-
-[Listing](https://www.homes77.com/property/2493078/)
-
-## 14. 1923 farmhouse on 12 acres with Columbia River access, Clatskanie — 24/100
+## 12. 1923 farmhouse on 12 acres with Columbia River access, Clatskanie — 24/100
 
 Farmhouse with income-producing lease and river access; no other buildings listed.
 
@@ -256,7 +225,26 @@ Farmhouse with income-producing lease and river access; no other buildings liste
 
 [Listing](https://www.landwatch.com/columbia-county-oregon-farms-and-ranches-for-sale/pid/427540452)
 
-## 15. 10-acre riverside mini farm with water rights, 37625 Sunset Ln, Brownsville — 11/100
+## 13. U-pick blueberry farm on a spring-fed lake, 30431 38th Ave S, Auburn — 21/100
+
+Established organic U-pick blueberry farm (2,100 bushes) with lake and stream; no house, building site on plateau.
+
+**Strengths**
+- Natural water: lake, creek
+- ~40 min to a metro
+
+**To verify**
+- Zoning not found — check county GIS for commercial/conditional uses
+- Water rights / well not mentioned
+- Road access not described
+- Has water frontage — check FEMA flood maps
+
+**Research:** Description says about 5 acres but the recorded lot size is 142,623 sq ft (about 3.3 acres); confirm with the broker.
+Active at $777,000 (cut from $800,000). MLS lists 3.27 acres, not the ~5 in the ad copy; farm/land with no house.
+
+[Listing](https://www.pnwresidences.com/property-search/detail/69/2405143/30431-38th-ave-s-auburn-wa-98001/)
+
+## 14. 10-acre riverside mini farm with water rights, 37625 Sunset Ln, Brownsville — 11/100
 
 Large barn, two hoop houses, Calapooia River water rights irrigating all 10 acres, fruit trees.
 

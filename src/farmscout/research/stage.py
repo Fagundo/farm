@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 
 from farmscout.domain.models import Evaluation
@@ -14,6 +14,8 @@ from farmscout.rules.engine import RuleEngine
 from farmscout.storage.repository import CandidateRepository
 
 log = logging.getLogger("farmscout")
+
+NEEDS_FIX = {"broken", "wrong_property"}
 
 
 @dataclass(frozen=True)
@@ -51,18 +53,26 @@ class ResearchStage:
         self._policy = policy
         self._selector = selector
 
+    @property
+    def _status_mode(self) -> bool:
+        return getattr(self._researcher, "mode", "full") == "status"
+
     def _due(self, ev: Evaluation) -> bool:
         if self._selector is not None:
             return self._selector(ev)
         if ev.disqualified and not self._policy.include_disqualified:
             return False
-        last = ev.facts.researched_at
+        if ev.facts.link_status in NEEDS_FIX:
+            return True
+        last = ev.facts.status_checked_at if self._status_mode else ev.facts.researched_at
         cutoff = datetime.now(timezone.utc) - timedelta(days=self._policy.max_age_days)
         return last is None or last < cutoff.isoformat()
 
     def run(self) -> ResearchSummary:
         summary = ResearchSummary()
-        queue = sorted((c.evaluation for c in self._repo.all()), key=lambda e: e.score, reverse=True)
+        # Broken links first, then best score.
+        queue = sorted((c.evaluation for c in self._repo.all()),
+                       key=lambda e: (e.facts.link_status in NEEDS_FIX, e.score), reverse=True)
         queue = [e for e in queue if self._due(e)][: self._policy.top_n]
         for ev in queue:
             summary.considered += 1
@@ -73,7 +83,11 @@ class ResearchStage:
                 continue
             if result is None:
                 continue
-            facts = self._enricher.enrich(result.apply_to(ev.facts))
+            stamp = "status_checked_at" if self._status_mode else "researched_at"
+            facts = result.apply_to(ev.facts, stamp)
+            if result.updates.get("canonical_url"):
+                facts = replace(facts, link_status=None)  # new link: re-check next run
+            facts = self._enricher.enrich(facts)
             new = self._engine.evaluate(facts)
             self._repo.save(new)
             summary.researched += 1

@@ -18,6 +18,8 @@ farmscout queries                   # see the searches the config generates
 farmscout run --limit 25            # discover + score up to 25 new properties
 farmscout run --sources rentcast,redfin_csv   # just the listing feeds
 farmscout evaluate https://...      # score one listing and print every rule's verdict
+farmscout verify                    # check every link opens its property; catch "sold"/"pending" pages
+farmscout research --mode status --top 200 --max-age-days 3   # re-confirm status, price, working link
 farmscout research --top 15         # research the best candidates (status, links, zoning, water...)
 farmscout report                    # rebuild reports and site/index.html from the database
 farmscout import data/run-2026-11-20.json   # score facts gathered by hand
@@ -56,6 +58,23 @@ bots (including GitHub's runners). So farmscout does not crawl them. It covers t
 
 For new-listing alerts, Zillow and Redfin saved-search emails still work; paste interesting links into
 `config/seeds.txt`.
+
+## Keeping links and status fresh
+
+Listings go stale fast, and aggregator sites (homes77.com and similar) keep old copies with outdated
+prices and statuses. Every scheduled run therefore:
+
+1. **`farmscout verify`** loads each candidate's link and checks it actually shows that property (the
+   street number and name appear on the page). It records `ok`, `broken`, `wrong_property` (e.g.
+   redirected to a search page), `blocked` or `unreachable`, and if the page itself says sold or
+   pending, updates the status (sold listings drop out).
+2. **`farmscout research --mode status`** has Claude re-confirm status and price for every candidate not
+   checked in 3 days, broken links first, and swap in a working MLS-mirror link (pnwresidences.com,
+   coldwellbankerhomes.com, windermere.com...) that shows the current status and MLS number.
+3. Full research on the top candidates, then a second `verify` to check any new links.
+
+The page shows a link-health chip on each property, and always offers **Find on Zillow** and
+**Search the web** links built from the address as a fallback.
 
 ## Research step
 

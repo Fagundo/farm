@@ -53,6 +53,10 @@ class PropertyFacts:
     research_notes: str = ""
     research_sources: list[str] = field(default_factory=list)
     researched_at: str | None = None
+    status_checked_at: str | None = None
+    # Filled by the link check.
+    link_status: str | None = None  # "ok" | "broken" | "wrong_property" | "blocked" | "unreachable"
+    link_checked_at: str | None = None
 
     @property
     def link(self) -> str:

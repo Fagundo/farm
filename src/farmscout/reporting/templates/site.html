@@ -88,6 +88,9 @@ header p { margin: 0; color: var(--muted); max-width: 70ch; }
 .research { grid-column: 2 / 4; font-size: 13px; border-left: 3px solid var(--accent); padding: 4px 0 4px 10px; color: var(--ink); }
 .research p { margin: 0 0 4px; max-width: 75ch; }
 .research .src { color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.chip.ln-ok { background: var(--good-bg); color: var(--good); }
+.chip.ln-broken, .chip.ln-wrong_property { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
+.chip.ln-blocked, .chip.ln-unreachable { background: var(--warn-bg); color: var(--warn); }
 .links { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; }
 .chip.z-commercial { background: var(--good-bg); color: var(--good); }
 .chip.z-farm_only, .chip.z-forest_only { background: var(--bad-bg); color: var(--bad); }
@@ -164,6 +167,20 @@ footer { color: var(--muted); font-size: 13px; }
   var STATUS = { active: "Active", pending: "Pending", sold: "Sold", off_market: "Off market" };
   function host(u) { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return "source"; } }
   function link(r) { return r.canonical_url || r.url; }
+  var LINK = { ok: "Link checked", broken: "Link broken", wrong_property: "Link shows a different page",
+               blocked: "Link not verifiable", unreachable: "Site didn't respond" };
+  // Street address from a title like "Barn on 7 acres, 1503 Maple Valley Rd SW, Olympia".
+  function address(r) {
+    var m = /\b\d{2,6}\s+[^,]+(?:,\s*[A-Za-z .'-]+)?/.exec(r.title || "");
+    return m ? m[0] + (r.state ? ", " + r.state : "") : null;
+  }
+  function searchLinks(r) {
+    var a = address(r); if (!a) return "";
+    var z = "https://www.zillow.com/homes/" + encodeURIComponent(a.replace(/[,\s]+/g, "-")) + "_rb/";
+    var g = "https://www.google.com/search?q=" + encodeURIComponent(a + " for sale");
+    return '<a href="' + esc(z) + '" target="_blank" rel="noopener">Find on Zillow</a>' +
+           '<a href="' + esc(g) + '" target="_blank" rel="noopener">Search the web</a>';
+  }
   function day(iso) { return iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""; }
   var ZLABEL = { commercial: "Commercial zoning", mixed: "Mixed / conditional", farm_only: "Farm-only zoning",
                  forest_only: "Forest zoning", other: "Zoning: check code" };
@@ -185,7 +202,7 @@ footer { color: var(--muted); font-size: 13px; }
     ].map(function (t) { return '<div class="tile"><b>' + esc(t[0]) + "</b><span>" + esc(t[1]) + "</span></div>"; }).join("");
     $("footer").innerHTML = "Scores reward zoning or existing permits that allow events (30 pts), an operating venue or winery (15), water rights, a creek or river for a cold plunge, " +
       "drive time to Seattle, Portland, Spokane or Boise, big outbuildings, a commercial kitchen, a second home and road access. Missing details score zero and appear under <i>To verify</i>. " +
-      "Listings are as advertised; confirm zoning with the county before relying on a score. Stars are saved in this browser only.";
+      "Listings are as advertised; confirm zoning with the county before relying on a score. Each run checks that every link opens its property and re-confirms that it is still for sale. If a link fails, use Find on Zillow or Search the web. Stars are saved in this browser only.";
   }
 
   function matches(r) {
@@ -227,6 +244,8 @@ footer { color: var(--muted); font-size: 13px; }
       var chips = [];
       if (r.disqualified) chips.push('<span class="chip dq">Ruled out</span>');
       if (r.listing_status) chips.push('<span class="chip st-' + esc(r.listing_status) + '">' + esc(STATUS[r.listing_status] || r.listing_status) + "</span>");
+      if (r.link_status) chips.push('<span class="chip ln-' + esc(r.link_status) + '">' + esc(LINK[r.link_status] || r.link_status) +
+        (r.link_checked_at ? " " + esc(day(r.link_checked_at)) : "") + "</span>");
       if (r.new) chips.push('<span class="chip new">New</span>');
       if (r.zoning_class) chips.push('<span class="chip z-' + esc(r.zoning_class) + '">' + esc(ZLABEL[r.zoning_class] || r.zoning_class) + (r.zoning ? " · " + esc(r.zoning) : "") + "</span>");
       (r.existing_uses || []).forEach(function (u) { chips.push('<span class="chip">' + esc(u) + "</span>"); });
@@ -244,7 +263,8 @@ footer { color: var(--muted); font-size: 13px; }
             return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(host(u)) + "</a>"; }).join("") + "</div></div>" : "") +
         '<div class="notes">' + list(r.strengths, "good", "Strengths") + list(r.red_flags, "bad", "Red flags") + list(r.to_verify, "warn", "To verify") + "</div>" +
         '<div class="links"><a href="' + esc(link(r)) + '" target="_blank" rel="noopener">Open listing (' + esc(host(link(r))) + ")</a>" +
-          (r.canonical_url && r.canonical_url !== r.url ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">Where it was found (' + esc(host(r.url)) + ")</a>" : "") + "</div>" +
+          (r.canonical_url && r.canonical_url !== r.url ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">Where it was found (' + esc(host(r.url)) + ")</a>" : "") +
+          searchLinks(r) + "</div>" +
         "</article>";
     }).join("");
   }

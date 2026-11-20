@@ -23,29 +23,34 @@ class ResearchResult:
     updates: dict[str, Any] = field(default_factory=dict)
     notes: str = ""
     sources: list[str] = field(default_factory=list)
+    # Fields to overwrite even though the listing stated them (e.g. MLS acreage vs. ad copy).
+    force: list[str] = field(default_factory=list)
 
-    def apply_to(self, facts: PropertyFacts) -> PropertyFacts:
+    def apply_to(self, facts: PropertyFacts, stamp: str = "researched_at") -> PropertyFacts:
         known = {f.name for f in fields(PropertyFacts)} - PROTECTED
         changes: dict[str, Any] = {}
         for key, value in self.updates.items():
             if key not in known or value is None or value == "" or value == []:
                 continue
             current = getattr(facts, key)
-            if key in OVERRIDABLE or current is None or current == "" or current == []:
+            if key in OVERRIDABLE or key in self.force or current is None or current == "" or current == []:
                 changes[key] = value
             elif isinstance(current, list) and isinstance(value, list):
                 changes[key] = sorted(set(current) | set(value))
         notes = "\n".join(x for x in (facts.research_notes, self.notes) if x).strip()
+        changes[stamp] = datetime.now(timezone.utc).isoformat(timespec="seconds")
         return replace(
             facts,
             **changes,
             research_notes=notes,
             research_sources=sorted(set(facts.research_sources) | set(self.sources)),
-            researched_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         )
 
 
 class PropertyResearcher(ABC):
+    #: "full" fills every gap; "status" only confirms status, price and a working link.
+    mode: str = "full"
+
     @abstractmethod
     def research(self, facts: PropertyFacts, open_questions: list[str]) -> ResearchResult | None:
         """Return findings for ``facts`` (None if nothing was found)."""
