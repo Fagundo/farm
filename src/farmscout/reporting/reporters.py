@@ -23,7 +23,7 @@ class Reporter(ABC):
 class CsvReporter(Reporter):
     COLUMNS = [
         "score", "new", "title", "price_usd", "acres", "county", "state", "zoning", "zoning_class",
-        "existing_uses", "water_features", "drive_minutes_to_metro", "red_flags", "to_verify", "url",
+        "existing_uses", "water_features", "drive_minutes_to_metro", "listing_status", "red_flags", "to_verify", "research_notes", "url",
     ]
 
     def __init__(self, out_dir: Path) -> None:
@@ -43,7 +43,8 @@ class CsvReporter(Reporter):
                     "zoning_class": f.zoning_class, "existing_uses": "; ".join(f.existing_uses),
                     "water_features": "; ".join(f.water_features),
                     "drive_minutes_to_metro": f.drive_minutes_to_metro,
-                    "red_flags": "; ".join(e.red_flags), "to_verify": "; ".join(e.to_verify), "url": f.url,
+                    "listing_status": f.listing_status, "red_flags": "; ".join(e.red_flags),
+                    "to_verify": "; ".join(e.to_verify), "research_notes": f.research_notes, "url": f.link,
                 })
         return path
 
@@ -74,7 +75,7 @@ class MarkdownReporter(Reporter):
             loc = ", ".join(x for x in (f.county and f"{f.county} Co.", f.state) if x) or "?"
             title = (f.title or f.url)[:60].replace("|", "/")
             lines.append(
-                f"| {i} | {e.score:.0f} | {'★' if f.url in new_urls else ''} | [{title}]({f.url}) | {price} | "
+                f"| {i} | {e.score:.0f} | {'★' if f.url in new_urls else ''} | [{title}]({f.link}) | {price} | "
                 f"{f.acres or '?'} | {loc} | {f.zoning or '?'} |"
             )
         for i, e in enumerate(ranked[: self._top], 1):
@@ -85,6 +86,8 @@ class MarkdownReporter(Reporter):
             for label, items in (("Strengths", e.strengths), ("Red flags", e.red_flags), ("To verify", e.to_verify)):
                 if items:
                     lines += ["", f"**{label}**", *[f"- {x}" for x in items]]
-            lines += ["", f"[Listing]({f.url})"]
+            if f.research_notes:
+                lines += ["", f"**Research:** {f.research_notes}"]
+            lines += ["", f"[Listing]({f.link})"]
         path.write_text("\n".join(lines) + "\n")
         return path

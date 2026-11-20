@@ -58,6 +58,7 @@ def build_engine(settings: Settings) -> RuleEngine:
         hard.PriceCapRule(hf),
         hard.RegionRule(hf, settings.counties_by_state),
         hard.AcreageRule(hf),
+        hard.ListingStatusRule(),
     ]
     for key, weight in settings.weights.items():
         if key not in SOFT_RULES:

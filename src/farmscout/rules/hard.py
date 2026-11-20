@@ -62,3 +62,19 @@ class AcreageRule(HardRule):
         if lo <= facts.acres <= hi:
             return self.passed(f"{facts.acres:g} acres is within {lo:g}–{hi:g}")
         return self.failed(f"{facts.acres:g} acres is outside {lo:g}–{hi:g}")
+
+
+class ListingStatusRule(HardRule):
+    """Drops listings that research found sold or withdrawn; flags pending ones."""
+
+    rule_id = "listing_status"
+
+    def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
+        status = (facts.listing_status or "").lower()
+        if status in {"sold", "off_market"}:
+            return self.failed(f"Listing is {status.replace('_', ' ')}")
+        if status == "pending":
+            return self.unknown("Sale pending — ask the agent for backup-offer status")
+        if status == "active":
+            return self.passed("Listing confirmed active")
+        return self.unknown("Listing status not confirmed")

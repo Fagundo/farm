@@ -47,6 +47,16 @@ class PropertyFacts:
     has_hoa: bool | None = None
     drive_minutes_to_metro: int | None = None
     summary: str = ""
+    # Filled by the research step.
+    listing_status: str | None = None  # "active" | "pending" | "sold" | "off_market"
+    canonical_url: str | None = None  # a working listing page, when ``url`` is stale or generic
+    research_notes: str = ""
+    research_sources: list[str] = field(default_factory=list)
+    researched_at: str | None = None
+
+    @property
+    def link(self) -> str:
+        return self.canonical_url or self.url
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
