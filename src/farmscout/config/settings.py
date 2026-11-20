@@ -30,6 +30,7 @@ class SearchSettings:
     places: tuple[str, ...]
     listing_domains: tuple[str, ...]
     portal_domains: tuple[str, ...] = ()
+    max_portal_queries: int | None = None
     portal_property_types: tuple[str, ...] = ()
 
 
@@ -59,8 +60,9 @@ class FetchSettings:
 class Settings:
     hard_filters: HardFilters
     counties_by_state: dict[str, tuple[str, ...]]
-    drive_minutes: dict[str, int]
+    drive_minutes: dict[str, dict[str, int]]  # state -> county -> minutes
     zoning_classes: tuple[ZoningClass, ...]
+    acreage_ideal: tuple[float, float]
     weights: dict[str, float]
     penalties: dict[str, float]
     shortlist_threshold: float
@@ -90,8 +92,15 @@ class Settings:
                 allowed_states=tuple(hf["allowed_states"]),
                 keep_unknowns=bool(hf.get("keep_unknowns", True)),
             ),
-            counties_by_state={st: tuple(v["counties"]) for st, v in raw.get("regions", {}).items()},
-            drive_minutes={k: int(v) for k, v in raw.get("drive_minutes", {}).items()},
+            counties_by_state={st: tuple(v["drive_minutes"]) for st, v in raw.get("regions", {}).items()},
+            drive_minutes={
+                st: {c: int(m) for c, m in v["drive_minutes"].items()}
+                for st, v in raw.get("regions", {}).items()
+            },
+            acreage_ideal=(
+                float(raw.get("acreage", {}).get("ideal_min", hf["min_acres"])),
+                float(raw.get("acreage", {}).get("ideal_max", hf["max_acres"])),
+            ),
             zoning_classes=tuple(
                 ZoningClass(c["name"], tuple(c["patterns"])) for c in raw["zoning"]["classes"]
             ),
@@ -105,6 +114,7 @@ class Settings:
                 places=tuple(s["places"]),
                 listing_domains=tuple(s.get("listing_domains", ())),
                 portal_domains=tuple(s.get("portal_domains", ())),
+                max_portal_queries=s.get("max_portal_queries"),
                 portal_property_types=tuple(s.get("portal_property_types", ())),
             ),
             llm=LLMSettings(l["model"], int(l["max_tokens"]), int(l["web_search_max_uses"])),
@@ -113,7 +123,7 @@ class Settings:
                 float(f["timeout_seconds"]), int(f["max_chars"]),
             ),
             rentcast=RentCastSettings(
-                states=tuple(raw.get("rentcast", {}).get("states", ("WA", "OR"))),
+                states=tuple(raw.get("rentcast", {}).get("states", ("WA", "OR", "ID"))),
                 max_pages_per_state=int(raw.get("rentcast", {}).get("max_pages_per_state", 2)),
             ),
             redfin_csv_dir=Path(raw.get("inbox", {}).get("redfin_csv_dir", "data/inbox")),

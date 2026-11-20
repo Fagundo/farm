@@ -184,7 +184,7 @@ footer { color: var(--muted); font-size: 13px; }
       [median ? "$" + Math.round(median / 1000) + "k" : "–", "median asking price"]
     ].map(function (t) { return '<div class="tile"><b>' + esc(t[0]) + "</b><span>" + esc(t[1]) + "</span></div>"; }).join("");
     $("footer").innerHTML = "Scores reward zoning or existing permits that allow events (30 pts), an operating venue or winery (15), water rights, a creek or river for a cold plunge, " +
-      "drive time, big outbuildings, a commercial kitchen, a second home and road access. Missing details score zero and appear under <i>To verify</i>. " +
+      "drive time to Seattle, Portland, Spokane or Boise, big outbuildings, a commercial kitchen, a second home and road access. Missing details score zero and appear under <i>To verify</i>. " +
       "Listings are as advertised; confirm zoning with the county before relying on a score. Stars are saved in this browser only.";
   }
 
@@ -223,7 +223,7 @@ footer { color: var(--muted); font-size: 13px; }
       var meta = ["<b>" + money(r.price_usd) + "</b>",
                   r.acres != null ? "<b>" + r.acres + "</b> acres" : "Acres ?",
                   esc(loc || "Location ?"),
-                  r.drive_minutes_to_metro != null ? "~" + r.drive_minutes_to_metro + " min to Seattle/Portland" : ""].filter(Boolean);
+                  r.drive_minutes_to_metro != null ? "~" + r.drive_minutes_to_metro + " min to nearest city" : ""].filter(Boolean);
       var chips = [];
       if (r.disqualified) chips.push('<span class="chip dq">Ruled out</span>');
       if (r.listing_status) chips.push('<span class="chip st-' + esc(r.listing_status) + '">' + esc(STATUS[r.listing_status] || r.listing_status) + "</span>");

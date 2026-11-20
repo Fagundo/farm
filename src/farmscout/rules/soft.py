@@ -77,7 +77,7 @@ class MetroProximityRule(Rule):
     def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
         m = facts.drive_minutes_to_metro
         if m is None:
-            return self.unknown("Drive time to Seattle/Portland unknown")
+            return self.unknown("Drive time to the nearest city unknown")
         if m <= 60:
             return self.passed(f"~{m} min to a metro")
         if m <= 90:
@@ -132,3 +132,23 @@ class AccessRule(Rule):
         if facts.road_access == "shared_private":
             return self.failed("Shared private road/easement — neighbors can contest traffic")
         return self.unknown("Road access not described")
+
+
+class AcreageFitRule(Rule):
+    """Full points inside the ideal acreage band; partial for small or very large parcels."""
+
+    rule_id = "acreage_fit"
+
+    def __init__(self, max_points: float, ideal_min: float, ideal_max: float) -> None:
+        super().__init__(max_points)
+        self._lo, self._hi = ideal_min, ideal_max
+
+    def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
+        a = facts.acres
+        if a is None:
+            return self.unknown("Acreage unknown")
+        if self._lo <= a <= self._hi:
+            return self.passed(f"{a:g} acres is in the ideal {self._lo:g}–{self._hi:g} range")
+        if a < self._lo:
+            return self.partial(0.4, f"{a:g} acres is tight for farming plus events")
+        return self.partial(0.6, f"{a:g} acres is more land to pay for and maintain")
