@@ -18,6 +18,9 @@ on:
       sources:
         description: "Comma list: claude, portals, rentcast, redfin_csv, brave, seeds"
         default: "claude,portals,rentcast,redfin_csv,seeds"
+      research_top:
+        description: How many top candidates to research (0 to skip)
+        default: "15"
       refresh:
         description: Re-score properties already seen
         type: boolean
@@ -57,10 +60,22 @@ jobs:
             echo "::warning::No ANTHROPIC_API_KEY or RENTCAST_API_KEY secret set; only seeds and Redfin CSVs will be read"
           fi
           farmscout run --sources "$SOURCES" --limit "$LIMIT" $REFRESH | tee run.log
+
+      - name: Research top candidates
+        # Confirms each listing is still for sale, finds a working link, and fills zoning,
+        # water, floodplain and building details from county records and other sites.
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCH_TOP: ${{ inputs.research_top || '15' }}
+        if: ${{ inputs.research_top != '0' }}
+        run: farmscout research --top "$RESEARCH_TOP" | tee -a run.log
+
+      - name: Summary
+        run: |
           {
             echo "## Scout run"
             echo '```'
-            tail -n 3 run.log
+            grep -E "^(Discovered|Researched|  )" run.log || true
             echo '```'
             sed -n '1,30p' reports/candidates-$(date -u +%F).md
           } >> "$GITHUB_STEP_SUMMARY"

@@ -8,7 +8,8 @@ import logging
 import sys
 from pathlib import Path
 
-from farmscout.app.container import DEFAULT_SOURCES, build_pipeline
+from farmscout.app.container import DEFAULT_SOURCES, build_pipeline, build_research_stage
+from farmscout.research.stage import ResearchPolicy
 from farmscout.config.settings import Settings
 from farmscout.domain.models import PropertyFacts, RawListing
 from farmscout.search.query_builder import QueryBuilder
@@ -35,6 +36,12 @@ def _parser() -> argparse.ArgumentParser:
 
     imp = sub.add_parser("import", help="Score a JSON list of PropertyFacts gathered elsewhere")
     imp.add_argument("file", type=Path)
+
+    rs = sub.add_parser("research", help="Research top candidates to confirm status and fill gaps")
+    rs.add_argument("--top", type=int, default=20, help="How many of the best candidates to research")
+    rs.add_argument("--max-age-days", type=int, default=14, help="Re-research after this many days")
+    rs.add_argument("--include-disqualified", action="store_true")
+    rs.add_argument("--from-file", type=Path, help="Apply saved findings (JSON) instead of live research")
 
     sub.add_parser("report", help="Rebuild reports and the web page from the database")
     sub.add_parser("queries", help="Print the search queries the config generates")
@@ -74,6 +81,17 @@ def main(argv: list[str] | None = None) -> int:
         s = pipeline.import_facts(items)
         print(f"Imported {s.evaluated} ({s.disqualified} disqualified), {s.new} new.")
         for path in s.reports:
+            print(f"Report: {path}")
+    elif args.cmd == "research":
+        stage = build_research_stage(
+            settings, db_path=args.db, from_file=args.from_file,
+            policy=ResearchPolicy(args.top, args.max_age_days, args.include_disqualified))
+        if stage is not None:
+            r = stage.run()
+            print(f"Researched {r.researched} of {r.considered}; {r.changed_status} status changes.")
+            for url, before, after in r.score_changes:
+                print(f"  {before:5.1f} -> {'ruled out' if after < 0 else f'{after:5.1f}'}  {url}")
+        for path in pipeline.report():
             print(f"Report: {path}")
     elif args.cmd == "report":
         for path in pipeline.report():

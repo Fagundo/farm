@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from farmscout.config.settings import Settings
@@ -27,7 +27,10 @@ from farmscout.sources.claude_search import ClaudeWebSearchSource
 from farmscout.sources.redfin_csv import RedfinCsvSource
 from farmscout.sources.rentcast import RentCastSource
 from farmscout.sources.seed_file import SeedFileSource
-from farmscout.storage.repository import SqliteCandidateRepository
+from farmscout.storage.repository import SqliteCandidateRepository, normalize_url
+from farmscout.research.claude_researcher import ClaudeResearcher
+from farmscout.research.file_researcher import FileResearcher
+from farmscout.research.stage import ResearchPolicy, ResearchStage
 from farmscout.zoning.classifier import ZoningClassifier
 
 log = logging.getLogger("farmscout")
@@ -134,6 +137,37 @@ def build_extractor(llm: LLMClient | None) -> FactExtractor:
     return LayeredExtractor(LLMExtractor(llm), heuristic, on_error=_warn("llm extract"))
 
 
+def build_enricher(settings: Settings) -> EnrichmentChain:
+    return EnrichmentChain([
+        ZoningClassEnricher(ZoningClassifier(settings.zoning_classes)),
+        DriveTimeEnricher(settings.drive_minutes),
+    ])
+
+
+def build_research_stage(
+    settings: Settings,
+    *,
+    db_path: Path,
+    from_file: Path | None = None,
+    policy: ResearchPolicy = ResearchPolicy(),
+) -> ResearchStage | None:
+    """Claude-backed research, or replay of saved findings when ``from_file`` is given."""
+    selector = None
+    if from_file is not None:
+        researcher = FileResearcher(from_file)
+        wanted = {normalize_url(u) for u in researcher.urls}
+        selector = lambda ev: normalize_url(ev.facts.url) in wanted  # noqa: E731
+        policy = replace(policy, top_n=len(wanted))
+    else:
+        llm = build_llm(settings)
+        if llm is None:
+            log.warning("Skipping research: ANTHROPIC_API_KEY not set")
+            return None
+        researcher = ClaudeResearcher(llm)
+    return ResearchStage(researcher, build_enricher(settings), build_engine(settings),
+                         SqliteCandidateRepository(db_path), policy, selector)
+
+
 def build_pipeline(
     settings: Settings,
     *,
@@ -148,10 +182,7 @@ def build_pipeline(
         source=build_sources(settings, sources, llm, seeds_path),
         fetcher=HttpPageFetcher(settings.fetch, on_error=_warn("fetch")),
         extractor=build_extractor(llm),
-        enricher=EnrichmentChain([
-            ZoningClassEnricher(ZoningClassifier(settings.zoning_classes)),
-            DriveTimeEnricher(settings.drive_minutes),
-        ]),
+        enricher=build_enricher(settings),
         engine=build_engine(settings),
         repository=SqliteCandidateRepository(db_path),
         reporters=[

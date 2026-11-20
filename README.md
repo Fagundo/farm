@@ -18,6 +18,7 @@ farmscout queries                   # see the searches the config generates
 farmscout run --limit 25            # discover + score up to 25 new properties
 farmscout run --sources rentcast,redfin_csv   # just the listing feeds
 farmscout evaluate https://...      # score one listing and print every rule's verdict
+farmscout research --top 15         # research the best candidates (status, links, zoning, water...)
 farmscout report                    # rebuild reports and site/index.html from the database
 farmscout import data/run-2026-11-20.json   # score facts gathered by hand
 ```
@@ -56,6 +57,21 @@ bots (including GitHub's runners). So farmscout does not crawl them. It covers t
 For new-listing alerts, Zillow and Redfin saved-search emails still work; paste interesting links into
 `config/seeds.txt`.
 
+## Research step
+
+`farmscout research` takes the best-scoring candidates that haven't been researched in 14 days and has
+Claude (with web search) look each one up beyond its listing page: other listing sites for the same
+address, county assessor/GIS and zoning, FEMA flood information, water-rights records and permits. It:
+
+- confirms the listing is still for sale (sold or withdrawn listings are ruled out; pending ones are flagged),
+- finds a working listing link when the original is stale or generic (`canonical_url`; the page links to it),
+- fills fields the listing left blank (zoning, water, floodplain, buildings, dwellings, county), and updates
+  the price if it changed,
+- records notes and the source URLs it used, shown on the page under each property.
+
+Research only fills gaps: facts the listing states are kept, except status, price and link, which go stale.
+Findings gathered by hand can be applied the same way: `farmscout research --from-file data/research-YYYY-MM-DD.json`.
+
 ## Running on GitHub Actions
 
 Three workflows live in `.github/workflows/`:
@@ -63,7 +79,7 @@ Three workflows live in `.github/workflows/`:
 | Workflow | When | What it does |
 | --- | --- | --- |
 | `ci.yml` (Tests) | Every push and PR | Runs `pytest` |
-| `scout.yml` (Scout properties) | Mondays 15:17 UTC, or **Run workflow** by hand | Searches, scores, commits `data/farmscout.sqlite` and `reports/` back to `main`, then publishes the page |
+| `scout.yml` (Scout properties) | Mondays 15:17 UTC, a Redfin CSV pushed to `data/inbox/`, or **Run workflow** by hand | Searches, scores, researches the top 15, commits `data/farmscout.sqlite` and `reports/` back to `main`, then publishes the page |
 | `pages.yml` (Publish page) | After each scout run, on pushes that touch `data/`, `config/` or the page template, or by hand | Runs `farmscout report` and deploys `site/` to GitHub Pages |
 
 One-time setup:
@@ -115,6 +131,7 @@ src/farmscout/
   zoning/        zone code → commercial | mixed | farm_only | forest_only
   enrichment/    derived facts
   rules/         base classes, hard/soft/penalty rules, engine + registry
+  research/      researcher interface, Claude and file-replay researchers, research stage
   storage/       SQLite repository, URL normalization
   reporting/     Markdown, CSV and web-page writers (templates/site.html)
   app/           composition root
