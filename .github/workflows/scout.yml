@@ -1,0 +1,82 @@
+# Weekly property search. Repo secrets: ANTHROPIC_API_KEY (web + Zillow/Redfin/Realtor.com search),
+# RENTCAST_API_KEY (licensed MLS listings), BRAVE_API_KEY (optional). Sources without a key are skipped.
+# Also runs when a Redfin CSV export is pushed to data/inbox/.
+# Results (database + reports) are committed back to the repo, then the web page is republished.
+name: Scout properties
+
+on:
+  schedule:
+    - cron: "17 15 * * 1"   # Mondays 15:17 UTC (7:17 am Pacific in winter, 8:17 am in summer)
+  push:
+    branches: [main]
+    paths: ["data/inbox/**.csv"]
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Max properties to evaluate
+        default: "40"
+      sources:
+        description: "Comma list: claude, portals, rentcast, redfin_csv, brave, seeds"
+        default: "claude,portals,rentcast,redfin_csv,seeds"
+      refresh:
+        description: Re-score properties already seen
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: scout
+  cancel-in-progress: false
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e .
+
+      - name: Search and score
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          RENTCAST_API_KEY: ${{ secrets.RENTCAST_API_KEY }}
+          SOURCES: ${{ inputs.sources || 'claude,portals,rentcast,redfin_csv,seeds' }}
+          LIMIT: ${{ inputs.limit || '40' }}
+          REFRESH: ${{ inputs.refresh && '--refresh' || '' }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY$RENTCAST_API_KEY" ]; then
+            echo "::warning::No ANTHROPIC_API_KEY or RENTCAST_API_KEY secret set; only seeds and Redfin CSVs will be read"
+          fi
+          farmscout run --sources "$SOURCES" --limit "$LIMIT" $REFRESH | tee run.log
+          {
+            echo "## Scout run"
+            echo '```'
+            tail -n 3 run.log
+            echo '```'
+            sed -n '1,30p' reports/candidates-$(date -u +%F).md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/farmscout.sqlite reports
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Scout run $(date -u +%F)"
+            git push
+          fi
+
+  publish:
+    needs: scout
+    uses: ./.github/workflows/pages.yml

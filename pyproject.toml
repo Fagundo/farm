@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "farmscout"
+version = "0.1.0"
+description = "Find and score Pacific Northwest properties for a farm + sauna + event business"
+requires-python = ">=3.11"
+dependencies = []  # standard library only
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+farmscout = "farmscout.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+farmscout = ["reporting/templates/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

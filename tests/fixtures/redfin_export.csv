@@ -1,0 +1,5 @@
+SALE TYPE,SOLD DATE,PROPERTY TYPE,ADDRESS,CITY,STATE OR PROVINCE,ZIP OR POSTAL CODE,PRICE,BEDS,BATHS,LOCATION,SQUARE FEET,LOT SIZE,YEAR BUILT,DAYS ON MARKET,$/SQUARE FEET,HOA/MONTH,STATUS,NEXT OPEN HOUSE START TIME,NEXT OPEN HOUSE END TIME,URL (SEE https://www.redfin.com/buy-a-home/comparative-market-analysis FOR INFO ON PRICING),SOURCE,MLS#,FAVORITE,INTERESTED,LATITUDE,LONGITUDE
+In accordance with local MLS rules, some MLS listings are not included in the download,,,,,,,,,,,,,,,,,,,,,,,,,,
+MLS Listing,,Single Family Residential,123 Farm Rd,Sedro-Woolley,WA,98284,"$785,000",3,2,Sedro-Woolley,1850,"653,400",1978,21,424,,Active,,,https://www.redfin.com/WA/Sedro-Woolley/123-Farm-Rd-98284/home/1,NWMLS,2400001,N,Y,48.50,-122.23
+MLS Listing,,Vacant Land,0 River Rd,Concrete,WA,98237,"$215,000",,,Concrete,,"435,600",,90,,,Active,,,https://www.redfin.com/WA/Concrete/0-River-Rd-98237/home/2,NWMLS,2400002,N,Y,48.53,-121.75
+MLS Listing,,Single Family Residential,9 Sold Ln,Burlington,WA,98233,"$650,000",3,2,Burlington,1500,"217,800",1990,5,433,,Pending,,,https://www.redfin.com/WA/Burlington/9-Sold-Ln/home/3,NWMLS,2400003,N,Y,48.47,-122.32
