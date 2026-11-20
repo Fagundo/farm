@@ -20,6 +20,14 @@ class Rule(ABC):
     @abstractmethod
     def evaluate(self, facts: PropertyFacts) -> RuleOutcome: ...
 
+    def applies(self, facts: PropertyFacts) -> bool:
+        """Rules that don't apply to a property (e.g. building rules on vacant land) are left out
+        of its score entirely, so it isn't penalized for them."""
+        return True
+
+    def not_applicable(self, reason: str = "") -> RuleOutcome:
+        return RuleOutcome(self.rule_id, Status.NOT_APPLICABLE, 0.0, 0.0, reason, self.hard, self.penalty)
+
     # Small helpers so subclasses stay declarative.
     def _out(self, status: Status, fraction: float, reason: str) -> RuleOutcome:
         return RuleOutcome(

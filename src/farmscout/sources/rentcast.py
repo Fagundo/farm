@@ -64,6 +64,7 @@ def item_to_listing(item: dict, source: str) -> RawListing:
         latitude=item.get("latitude"),
         longitude=item.get("longitude"),
         dwellings=0 if ptype == "Land" else 1,
+        property_type="land" if ptype == "Land" else "improved",
         has_hoa=(hoa_fee > 0) if isinstance(hoa_fee, (int, float)) else None,
         summary=summary,
     )

@@ -38,7 +38,11 @@ class CommercialPathwayRule(Rule):
 
 
 class ExistingApprovedUseRule(Rule):
+    """Existing permitted hospitality use. Not applicable to vacant land (zoning decides there)."""
     rule_id = "existing_approved_use"
+
+    def applies(self, facts: PropertyFacts) -> bool:
+        return not facts.is_land
 
     def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
         uses = hospitality_uses(facts)
@@ -113,7 +117,14 @@ class HomeProximityRule(Rule):
         return self.partial(round(fraction, 2), hours)
 
 
-class ConvertibleBuildingsRule(Rule):
+class BuildingRule(Rule):
+    """Rules about existing buildings. They don't apply to vacant land; build_readiness does."""
+
+    def applies(self, facts: PropertyFacts) -> bool:
+        return not facts.is_land
+
+
+class ConvertibleBuildingsRule(BuildingRule):
     rule_id = "convertible_buildings"
 
     def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
@@ -127,7 +138,7 @@ class ConvertibleBuildingsRule(Rule):
         return self.unknown("Outbuildings not described")
 
 
-class CommercialKitchenRule(Rule):
+class CommercialKitchenRule(BuildingRule):
     rule_id = "commercial_kitchen"
 
     def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
@@ -136,7 +147,7 @@ class CommercialKitchenRule(Rule):
         return self.failed("No commercial kitchen mentioned")
 
 
-class ExtraDwellingRule(Rule):
+class ExtraDwellingRule(BuildingRule):
     rule_id = "extra_dwelling"
 
     def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
@@ -178,3 +189,33 @@ class AcreageFitRule(Rule):
         if a < self._lo:
             return self.partial(0.4, f"{a:g} acres is tight for farming plus events")
         return self.partial(0.6, f"{a:g} acres is more land to pay for and maintain")
+
+
+class BuildReadinessRule(Rule):
+    """Vacant land only: how ready is it to build on? Power, water, septic, and road access."""
+
+    rule_id = "build_readiness"
+
+    def applies(self, facts: PropertyFacts) -> bool:
+        return facts.is_land
+
+    def evaluate(self, facts: PropertyFacts) -> RuleOutcome:
+        checks = {
+            "power": facts.has_power,
+            "water": True if (facts.has_well or facts.has_water_rights or facts.has_public_water)
+                     else (False if facts.has_well is False and facts.has_public_water is False else None),
+            "septic": None if facts.septic is None else facts.septic in {"existing", "approved", "perc_tested"},
+            "road": None if facts.road_access is None else facts.road_access != "shared_private",
+        }
+        have = [k for k, v in checks.items() if v is True]
+        missing = [k for k, v in checks.items() if v is False]
+        unknown = [k for k, v in checks.items() if v is None]
+        if len(unknown) == len(checks):
+            return self.unknown("Vacant land: power, water, septic and access not described")
+        reason = "Vacant land ready: " + (", ".join(have) or "nothing confirmed")
+        if missing:
+            reason += f"; missing {', '.join(missing)}"
+        if unknown:
+            reason += f"; check {', '.join(unknown)}"
+        fraction = len(have) / len(checks)
+        return self.passed(reason) if fraction == 1 else self.partial(round(fraction, 2), reason)

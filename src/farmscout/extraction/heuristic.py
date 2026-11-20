@@ -89,6 +89,17 @@ class HeuristicExtractor(FactExtractor):
         elif _any(r"\b\d\s*(?:bed|br|bedroom)", text):
             dwellings = 1
 
+        land = _any(r"vacant land|raw land|bare land|undeveloped (?:land|acreage)|\bland only\b|lots?/land|buildable (?:lot|acreage)", text)
+        septic = None
+        if _any(r"septic (?:design |permit )?approved|approved septic|septic (?:system )?design", text):
+            septic = "approved"
+        elif _any(r"perc(?:olation)? test(?:ed)?|perc'?d|passed perc", text):
+            septic = "perc_tested"
+        elif _any(r"septic (?:tank|system) (?:on site|installed|in place)|existing septic|\bseptic\b", text) and not land:
+            septic = "existing"
+        power = True if _any(r"power (?:at|to|on|available)|electric(?:ity)? (?:at|to|on|available)|power to (?:the )?(?:site|property|road)|utilities (?:at|to) (?:the )?(?:road|site)", text) else None
+        public_water = True if _any(r"(?:public|community|city|pud) water", text) else None
+
         return PropertyFacts(
             url=listing.url,
             title=listing.title or _first_line(page_text),
@@ -107,6 +118,10 @@ class HeuristicExtractor(FactExtractor):
             has_barn=True if _any(r"\bbarn\b|\bshop\b|pole building|outbuilding", text) else None,
             largest_outbuilding_sqft=max(sqfts) if sqfts else None,
             road_access=road,
+            property_type="land" if land else None,
+            has_power=power,
+            has_public_water=public_water,
+            septic=septic,
             in_floodplain=True if _any(r"flood ?plain|flood zone", text) else None,
             has_hoa=has_hoa,
         )

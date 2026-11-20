@@ -116,6 +116,7 @@ h1 { font: 500 32px/1.1 var(--font-display); margin: 0; letter-spacing: -0.01em;
 .meta, .chips { grid-column: 2 / 4; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.chip.land { background: var(--sky-soft); color: var(--ink); font-weight: 700; }
 .chip.new { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
 .chip.dq { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
 .chip.st-active { background: var(--good-bg); color: var(--good); font-weight: 600; }
@@ -182,6 +183,11 @@ footer { color: var(--muted); font-size: 13px; }
             <button type="button" data-v="MT" aria-pressed="false">MT</button>
             <button type="button" data-v="CA" aria-pressed="false">CA</button>
           </div>
+          <div class="seg" role="group" aria-label="Property type" id="ptype">
+            <button type="button" data-v="" aria-pressed="true">Any</button>
+            <button type="button" data-v="improved" aria-pressed="false">With buildings</button>
+            <button type="button" data-v="land" aria-pressed="false">Land</button>
+          </div>
           <label for="minScore">Min score <input type="range" id="minScore" min="0" max="100" step="5" value="0"> <output id="minScoreOut">0</output></label>
           <label for="sort">Sort
             <select id="sort">
@@ -210,7 +216,8 @@ footer { color: var(--muted); font-size: 13px; }
   "use strict";
   var DATA = JSON.parse(document.getElementById("data").textContent);
   var rows = DATA.candidates;
-  var state = { q: "", st: "", min: 0, sort: "score", starred: false, dq: false };
+  var state = { q: "", st: "", pt: "", min: 0, sort: "score", starred: false, dq: false };
+  function isLand(r) { return r.property_type ? r.property_type === "land" : (r.dwellings === 0 && r.has_barn === false); }
 
   var STAR_KEY = "farmscout-stars";
   var stars = {};
@@ -259,14 +266,15 @@ footer { color: var(--muted); font-size: 13px; }
       [ok.filter(function (r) { return r.listing_status === "active"; }).length, "confirmed still for sale"],
       [median ? "$" + Math.round(median / 1000) + "k" : "–", "median asking price"]
     ].map(function (t) { return '<div class="tile"><b>' + esc(t[0]) + "</b><span>" + esc(t[1]) + "</span></div>"; }).join("");
-    $("footer").innerHTML = "Scores reward zoning or existing permits that allow events (30 pts), an operating venue or winery (15), water rights, a creek or river for a cold plunge, " +
-      "drive time to Seattle (20 pts; drive times are estimates), a nearby city for guests, big outbuildings, a commercial kitchen, a second home and road access. Missing details score zero and appear under <i>To verify</i>. " +
-      "Listings are as advertised; confirm zoning with the county before relying on a score. Each run checks that every link opens its property and re-confirms that it is still for sale. If a link fails, use Find on Zillow or Search the web. Stars are saved in this browser only.";
+    $("footer").innerHTML = "Scores reward zoning or existing permits that allow events (30 pts), closeness to Seattle (20), an operating venue or winery (15), water rights, a creek or river for a cold plunge, " +
+      "a nearby city for guests, big outbuildings, a commercial kitchen, a second home and road access. Missing details score zero and appear under <i>To verify</i>. " +
+      "Vacant land is scored on zoning and build readiness (power, water, septic, access) instead of buildings, must be zoned for the use, and must leave room in the budget to build. Drive times are estimates. Listings are as advertised; confirm zoning with the county before relying on a score. Each run checks that every link opens its property and re-confirms that it is still for sale. If a link fails, use Find on Zillow or Search the web. Stars are saved in this browser only.";
   }
 
   function matches(r) {
     if (!state.dq && r.disqualified) return false;
     if (state.st && r.state !== state.st) return false;
+    if (state.pt && (state.pt === "land") !== isLand(r)) return false;
     if (r.score < state.min) return false;
     if (state.starred && !stars[r.url]) return false;
     if (state.q) {
@@ -294,7 +302,7 @@ footer { color: var(--muted); font-size: 13px; }
     var shown = rows.filter(matches).sort(SORTS[state.sort]);
     $("count").textContent = shown.length + " of " + rows.length + " shown";
     $("barCount").textContent = shown.length + " shown";
-    var active = [state.st || "All states", state.min ? "score " + state.min + "+" : "",
+    var active = [state.st || "All states", state.pt === "land" ? "land" : state.pt ? "with buildings" : "", state.min ? "score " + state.min + "+" : "",
                   state.q ? "“" + state.q + "”" : "", state.starred ? "starred" : "",
                   $("sort").selectedOptions[0].textContent].filter(Boolean);
     $("barActive").textContent = active.join(" · ");
@@ -312,6 +320,7 @@ footer { color: var(--muted); font-size: 13px; }
       if (r.listing_status) chips.push('<span class="chip st-' + esc(r.listing_status) + '">' + esc(STATUS[r.listing_status] || r.listing_status) + "</span>");
       if (r.link_status) chips.push('<span class="chip ln-' + esc(r.link_status) + '">' + esc(LINK[r.link_status] || r.link_status) +
         (r.link_checked_at ? " " + esc(day(r.link_checked_at)) : "") + "</span>");
+      if (isLand(r)) chips.push('<span class="chip land">Vacant land</span>');
       if (r.new) chips.push('<span class="chip new">New</span>');
       if (r.zoning_class) chips.push('<span class="chip z-' + esc(r.zoning_class) + '">' + esc(ZLABEL[r.zoning_class] || r.zoning_class) + (r.zoning ? " · " + esc(r.zoning) : "") + "</span>");
       (r.existing_uses || []).forEach(function (u) { chips.push('<span class="chip">' + esc(u) + "</span>"); });
@@ -343,6 +352,12 @@ footer { color: var(--muted); font-size: 13px; }
   $("state").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
     state.st = b.dataset.v;
+    Array.prototype.forEach.call(this.children, function (c) { c.setAttribute("aria-pressed", String(c === b)); });
+    render();
+  });
+  $("ptype").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    state.pt = b.dataset.v;
     Array.prototype.forEach.call(this.children, function (c) { c.setAttribute("aria-pressed", String(c === b)); });
     render();
   });

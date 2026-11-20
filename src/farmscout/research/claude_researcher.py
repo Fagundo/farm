@@ -22,6 +22,9 @@ Answer the open questions first. Then:
   (e.g. homes77.com). Give one whenever the current URL is an aggregator, stale, a search page, \
   or for a different property.
 - Fill any other fields you can confirm.
+- For vacant land, the zoning designation is the most important fact: find it on the county \
+  zoning map or parcel viewer and say which uses it allows (restaurant, event venue, \
+  campground, lodging), outright or by conditional use. Also confirm power, water and septic.
 
 Rules: only report what a source states. Never guess. Every fact must be backed by a URL in \
 "sources". Use null for anything not found.
@@ -35,7 +38,9 @@ Respond with ONLY this JSON object:
     "zoning": str|null, "existing_uses": [str], "has_water_rights": bool|null, "has_well": bool|null,
     "water_features": [str], "has_commercial_kitchen": bool|null, "dwellings": int|null,
     "has_barn": bool|null, "largest_outbuilding_sqft": int|null,
-    "road_access": "paved"|"gravel"|"shared_private"|null, "in_floodplain": bool|null, "has_hoa": bool|null
+    "road_access": "paved"|"gravel"|"shared_private"|null, "in_floodplain": bool|null, "has_hoa": bool|null,
+    "property_type": "land"|"improved"|null, "has_power": bool|null, "has_public_water": bool|null,
+    "septic": "existing"|"approved"|"perc_tested"|"none"|null
   },
   "notes": str,          // 1-3 sentences: what you confirmed and anything a buyer should know
   "sources": [str]       // URLs you relied on
@@ -45,7 +50,7 @@ FIELDS = (
     "url", "title", "price_usd", "acres", "state", "county", "city", "zoning", "existing_uses",
     "has_water_rights", "has_well", "water_features", "has_commercial_kitchen", "dwellings",
     "has_barn", "largest_outbuilding_sqft", "road_access", "in_floodplain", "has_hoa", "summary",
-    "listing_status",
+    "listing_status", "property_type", "has_power", "has_public_water", "septic",
 )
 
 

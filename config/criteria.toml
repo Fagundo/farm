@@ -13,6 +13,11 @@ max_drive_minutes_to_home = 690
 # Listings with an unknown price/acreage/county are kept but flagged "verify".
 keep_unknowns = true
 
+# Vacant land: must be zoned for the use (commercial or conditional-use zoning; farm/forest-only
+# land is out) and priced to leave room to build within the overall budget.
+[land]
+max_price_usd = 650_000
+
 # Acreage inside this range scores full points; 2-5 and 80-160 acres score partial points.
 [acreage]
 ideal_min = 5
@@ -96,6 +101,7 @@ commercial_kitchen = 5
 extra_dwelling = 5
 access = 5
 acreage_fit = 5
+build_readiness = 10   # vacant land only: power, water, septic, access
 
 # Red flags subtract points.
 [penalties]
@@ -132,6 +138,13 @@ property_types = [
   "u-pick farm for sale",
   "farm stay or agritourism property for sale",
   "former restaurant on acreage for sale",
+  # Vacant land zoned for the business
+  "rural commercial zoned land for sale",
+  "tourist commercial zoned land for sale",
+  "recreational or resort zoned land for sale",
+  "land approved for event venue or campground for sale",
+  "commercial acreage with river or creek frontage for sale",
+  "vacant land with well septic and power, commercial zoning, for sale",
 ]
 # Places to search. Each run samples (property type x place) combinations weighted toward places
 # close to home, so Seattle-area places come up far more often than Montana or California.
@@ -196,6 +209,7 @@ portal_property_types = [
   "farm with barn and acreage", "acreage with large shop", "riverfront or creekfront acreage",
   "horse property with arena", "wedding venue or event barn", "house on 10+ acres",
   "farm with guest house", "orchard or vineyard with house", "lodge or cabin compound",
+  "vacant land commercial zoning 5+ acres", "land with power well and septic approved 5+ acres",
 ]
 # Domains to prefer when searching (sources may use this as an allow-list hint).
 listing_domains = [

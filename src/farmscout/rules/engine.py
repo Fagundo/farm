@@ -20,7 +20,7 @@ class RuleEngine:
         return list(self._rules)
 
     def evaluate(self, facts: PropertyFacts) -> Evaluation:
-        outcomes = [r.evaluate(facts) for r in self._rules]
+        outcomes = [r.evaluate(facts) if r.applies(facts) else r.not_applicable() for r in self._rules]
         disqualified = any(
             o.hard and (o.status is Status.FAIL or (o.status is Status.UNKNOWN and not self._keep_unknowns))
             for o in outcomes
@@ -42,6 +42,7 @@ SOFT_RULES: dict[str, type[Rule]] = {
     "commercial_kitchen": soft.CommercialKitchenRule,
     "extra_dwelling": soft.ExtraDwellingRule,
     "access": soft.AccessRule,
+    "build_readiness": soft.BuildReadinessRule,
     "acreage_fit": soft.AcreageFitRule,  # built with the ideal range in build_engine
     "home_proximity": soft.HomeProximityRule,  # built with the home name in build_engine
 }
@@ -62,6 +63,8 @@ def build_engine(settings: Settings) -> RuleEngine:
         hard.AcreageRule(hf),
         hard.ListingStatusRule(),
         hard.HomeDistanceRule(hf.max_drive_minutes_to_home, settings.home.name),
+        hard.LandZoningRule(),
+        hard.LandPriceRule(settings.land_max_price_usd),
     ]
     for key, weight in settings.weights.items():
         if key == "acreage_fit":

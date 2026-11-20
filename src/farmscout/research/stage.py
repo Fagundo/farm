@@ -64,6 +64,8 @@ class ResearchStage:
             return False
         if ev.facts.link_status in NEEDS_FIX:
             return True
+        if not self._status_mode and ev.facts.is_land and not ev.facts.zoning and ev.facts.researched_at is None:
+            return True  # vacant land lives or dies by its zoning: look it up first
         last = ev.facts.status_checked_at if self._status_mode else ev.facts.researched_at
         cutoff = datetime.now(timezone.utc) - timedelta(days=self._policy.max_age_days)
         return last is None or last < cutoff.isoformat()
@@ -72,7 +74,8 @@ class ResearchStage:
         summary = ResearchSummary()
         # Broken links first, then best score.
         queue = sorted((c.evaluation for c in self._repo.all()),
-                       key=lambda e: (e.facts.link_status in NEEDS_FIX, e.score), reverse=True)
+                       key=lambda e: (e.facts.link_status in NEEDS_FIX,
+                                      e.facts.is_land and not e.facts.zoning, e.score), reverse=True)
         queue = [e for e in queue if self._due(e)][: self._policy.top_n]
         for ev in queue:
             summary.considered += 1

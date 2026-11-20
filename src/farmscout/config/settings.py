@@ -84,6 +84,7 @@ class Settings:
     drive_model: DriveTimeModel
     zoning_classes: tuple[ZoningClass, ...]
     acreage_ideal: tuple[float, float]
+    land_max_price_usd: int | None
     weights: dict[str, float]
     penalties: dict[str, float]
     shortlist_threshold: float
@@ -122,6 +123,7 @@ class Settings:
             metros=tuple(Place(**m) for m in raw.get("metros", [])) or (Place(**raw["home"]),),
             counties=CountyTable.load(_resolve(raw["geo"]["counties_file"], source_path)),
             drive_model=DriveTimeModel(float(raw["geo"].get("road_factor", 1.2)), float(raw["geo"].get("mph", 60))),
+            land_max_price_usd=raw.get("land", {}).get("max_price_usd"),
             acreage_ideal=(
                 float(raw.get("acreage", {}).get("ideal_min", hf["min_acres"])),
                 float(raw.get("acreage", {}).get("ideal_max", hf["max_acres"])),
