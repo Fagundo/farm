@@ -20,7 +20,7 @@ def test_unknown_price_kept_but_flagged(settings, enricher):
 
 
 def test_out_of_region_county_disqualifies(settings, enricher):
-    ev = build_engine(settings).evaluate(enricher.enrich(facts(state="WA", county="Spokane")))
+    ev = build_engine(settings).evaluate(enricher.enrich(facts(state="WA", county="Gotham")))
     assert ev.disqualified
 
 
@@ -68,3 +68,22 @@ def test_unknown_weight_in_config_is_rejected(settings):
     bad = dataclasses.replace(settings, weights={**settings.weights, "hot_tub": 5})
     with pytest.raises(ValueError, match="hot_tub"):
         build_engine(bad)
+
+
+def test_acreage_fit_partial_outside_ideal(settings, enricher):
+    engine = build_engine(settings)
+    by = lambda a: _by_id(engine.evaluate(enricher.enrich(facts(acres=a))))["acreage_fit"]
+    assert by(20).status is Status.PASS
+    assert by(3).status is Status.PARTIAL and by(120).status is Status.PARTIAL
+    assert not engine.evaluate(enricher.enrich(facts(acres=150))).disqualified
+    assert engine.evaluate(enricher.enrich(facts(acres=200))).disqualified
+
+
+def test_drive_time_is_keyed_by_state(enricher):
+    assert enricher.enrich(facts(state="WA", county="Lincoln")).drive_minutes_to_metro == 50
+    assert enricher.enrich(facts(state="OR", county="Lincoln")).drive_minutes_to_metro == 140
+
+
+def test_idaho_in_range(settings, enricher):
+    ev = build_engine(settings).evaluate(enricher.enrich(facts(state="ID", county="Bonner")))
+    assert not ev.disqualified
