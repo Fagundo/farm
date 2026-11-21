@@ -1,11 +1,12 @@
 # farmscout criteria — the single place to tune what counts as a good property.
-# Target: agriculture + sauna + event space / farm-to-table, Pacific Northwest, <= $1M.
+# Target: agriculture plus a small hospitality business (event venue, restaurant / farm-to-table,
+# or spa with sauna) in a quiet, secluded setting. Pacific Northwest, <= $1M.
 # Area: WA and OR, most of Idaho, western Montana and far northern California,
 # scored to favor places close to Seattle.
 
 [hard_filters]
 max_price_usd = 1_000_000
-min_acres = 2
+min_acres = 5
 max_acres = 160
 allowed_states = ["WA", "OR", "ID", "MT", "CA"]
 # Farther than this from home (Seattle) is out of range.
@@ -13,12 +14,13 @@ max_drive_minutes_to_home = 690
 # Listings with an unknown price/acreage/county are kept but flagged "verify".
 keep_unknowns = true
 
-# Vacant land: must be zoned for the use (commercial or conditional-use zoning; farm/forest-only
-# land is out) and priced to leave room to build within the overall budget.
+# Vacant land. Off: only properties with existing buildings (farms, venues, vineyards, lodges)
+# are kept. If switched on, land must be zoned for the use and priced to leave room to build.
 [land]
+include = false
 max_price_usd = 650_000
 
-# Acreage inside this range scores full points; 2-5 and 80-160 acres score partial points.
+# Acreage inside this range scores full points; 80-160 acres score partial points.
 [acreage]
 ideal_min = 5
 ideal_max = 80
@@ -29,7 +31,7 @@ name = "Seattle"
 lat = 47.6062
 lon = -122.3321
 
-# Cities event guests and customers come from; metro_proximity scores the nearest one.
+# Cities guests and customers come from (reachable, not right next door); metro_proximity scores the nearest one.
 [[metros]]
 name = "Seattle"
 lat = 47.6062
@@ -88,9 +90,37 @@ patterns = [
   'agri-?business', '\bAB\b', '\bRDD\b',
 ]
 
+# Businesses the property could host. business_pathway scores whichever fits best, so equal
+# weights mean "any one of these is enough"; raise a weight to favor that business.
+# existing_uses: operating uses that show it's permitted; zoning_patterns: zones that allow it
+# beyond plain "commercial"; resource_zone_credit: partial credit on farm/forest-only land.
+[[business_uses]]
+key = "venue"
+label = "Event venue"
+weight = 1
+existing_uses = ["event venue", "wedding venue", "retreat center", "guest ranch", "campground",
+                 "glamping", "winery", "lodge"]
+zoning_patterns = ['resort', 'recreation', 'tourist']
+resource_zone_credit = 0.25   # some counties allow a capped number of agritourism events
+[[business_uses]]
+key = "food"
+label = "Restaurant / farm-to-table"
+weight = 1
+existing_uses = ["restaurant", "cafe", "winery", "tasting room", "cidery", "brewery", "distillery",
+                 "farm stand", "bed and breakfast", "inn", "lodge"]
+zoning_patterns = ['tourist', 'rural village', 'resort']
+[[business_uses]]
+key = "wellness"
+label = "Spa / sauna"
+weight = 1
+existing_uses = ["spa", "bathhouse", "hot springs", "retreat center", "lodge", "inn",
+                 "bed and breakfast", "glamping", "guest ranch"]
+zoning_patterns = ['resort', 'recreation', 'tourist']
+
 # Soft rules: points toward the fit score. The total is scaled to 0-100, so weights are relative.
 [weights]
-commercial_pathway = 30
+business_pathway = 30
+seclusion = 10         # secluded beats highway frontage (relaxation)
 home_proximity = 20
 existing_approved_use = 15
 water_supply = 10
@@ -117,9 +147,9 @@ shortlist_threshold = 55
 [search]
 # Each run picks a random sample of (property type x place) combinations, so successive weekly
 # runs cover the grid. Each query is one Claude call with up to web_search_max_uses searches.
-max_queries = 100
-max_portal_queries = 60
-results_per_query = 15
+max_queries = 150
+max_portal_queries = 90
+results_per_query = 20
 property_types = [
   "winery with acreage for sale",
   "event venue with acreage for sale",
@@ -128,7 +158,7 @@ property_types = [
   "retreat center for sale",
   "farm with commercial kitchen for sale",
   "bed and breakfast on acreage for sale",
-  "rural commercial zoned acreage for sale",
+  "farm or ranch with buildings on rural commercial zoning for sale",
   "farm with river frontage for sale",
   "lodge on acreage for sale",
   "glamping or campground property for sale",
@@ -138,13 +168,26 @@ property_types = [
   "u-pick farm for sale",
   "farm stay or agritourism property for sale",
   "former restaurant on acreage for sale",
-  # Vacant land zoned for the business
-  "rural commercial zoned land for sale",
-  "tourist commercial zoned land for sale",
-  "recreational or resort zoned land for sale",
-  "land approved for event venue or campground for sale",
-  "commercial acreage with river or creek frontage for sale",
-  "vacant land with well septic and power, commercial zoning, for sale",
+  # Spa / sauna / wellness and food businesses, favoring quiet settings
+  "spa or wellness retreat on acreage for sale",
+  "bathhouse or day spa property for sale",
+  "secluded retreat property with creek or river for sale",
+  "cafe or restaurant on rural acreage for sale",
+  "inn or guest lodge on acreage for sale",
+  "secluded farm or homestead bordering national forest for sale",
+  # Working farms, vineyards and homesteads with buildings to convert
+  "vineyard with house for sale",
+  "hobby farm with barn and house for sale",
+  "farmhouse with outbuildings on acreage for sale",
+  "horse property with barn and arena for sale",
+  "farm with guest cottage or ADU for sale",
+  "berry or Christmas tree farm with house for sale",
+  "homestead with shop and pasture for sale",
+  "orchard or cidery with tasting room for sale",
+  "pumpkin patch or corn maze farm for sale",
+  "farm with farm stand and house for sale",
+  "nursery or flower farm with house for sale",
+  "guest ranch or farm stay with cabins for sale",
 ]
 # Places to search. Each run samples (property type x place) combinations weighted toward places
 # close to home, so Seattle-area places come up far more often than Montana or California.
@@ -209,7 +252,9 @@ portal_property_types = [
   "farm with barn and acreage", "acreage with large shop", "riverfront or creekfront acreage",
   "horse property with arena", "wedding venue or event barn", "house on 10+ acres",
   "farm with guest house", "orchard or vineyard with house", "lodge or cabin compound",
-  "vacant land commercial zoning 5+ acres", "land with power well and septic approved 5+ acres",
+  "secluded acreage with creek or river", "spa or retreat property on acreage",
+  "vineyard with house", "hobby farm with barn and house", "farmhouse with outbuildings on acreage",
+  "bed and breakfast on acreage", "farm with guest cabins",
 ]
 # Domains to prefer when searching (sources may use this as an allow-list hint).
 listing_domains = [

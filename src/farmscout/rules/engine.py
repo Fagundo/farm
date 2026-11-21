@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from farmscout.business import BusinessFitAssessor
 from farmscout.config.settings import Settings
 from farmscout.domain.models import Evaluation, PropertyFacts, Status
 from farmscout.rules import hard, penalties, soft
@@ -33,7 +34,8 @@ class RuleEngine:
 
 # Registry: config weight key -> soft rule class. Adding a rule = add a class + a weight.
 SOFT_RULES: dict[str, type[Rule]] = {
-    "commercial_pathway": soft.CommercialPathwayRule,
+    "business_pathway": soft.BusinessPathwayRule,  # built with the business-use catalog
+    "seclusion": soft.SeclusionRule,
     "existing_approved_use": soft.ExistingApprovedUseRule,
     "water_supply": soft.WaterSupplyRule,
     "plunge_water": soft.PlungeWaterRule,
@@ -63,10 +65,18 @@ def build_engine(settings: Settings) -> RuleEngine:
         hard.AcreageRule(hf),
         hard.ListingStatusRule(),
         hard.HomeDistanceRule(hf.max_drive_minutes_to_home, settings.home.name),
+        hard.VacantLandRule(settings.include_land),
         hard.LandZoningRule(),
         hard.LandPriceRule(settings.land_max_price_usd),
     ]
+    catalog = settings.business_uses
     for key, weight in settings.weights.items():
+        if key == "business_pathway":
+            rules.append(soft.BusinessPathwayRule(weight, BusinessFitAssessor(catalog)))
+            continue
+        if key == "existing_approved_use":
+            rules.append(soft.ExistingApprovedUseRule(weight, catalog))
+            continue
         if key == "acreage_fit":
             rules.append(soft.AcreageFitRule(weight, *settings.acreage_ideal))
             continue
@@ -79,5 +89,8 @@ def build_engine(settings: Settings) -> RuleEngine:
     for key, amount in settings.penalties.items():
         if key not in PENALTY_RULES:
             raise ValueError(f"Unknown penalty '{key}' in config; known: {sorted(PENALTY_RULES)}")
+        if key == "farm_only_no_existing_use":
+            rules.append(penalties.FarmOnlyNoExistingUsePenalty(amount, catalog))
+            continue
         rules.append(PENALTY_RULES[key](amount))
     return RuleEngine(rules, keep_unknowns=hf.keep_unknowns)

@@ -23,7 +23,7 @@ class Reporter(ABC):
 class CsvReporter(Reporter):
     COLUMNS = [
         "score", "new", "title", "property_type", "price_usd", "acres", "county", "state", "zoning", "zoning_class",
-        "existing_uses", "water_features", "drive_minutes_to_home", "drive_minutes_to_metro", "listing_status", "red_flags", "to_verify", "research_notes", "url",
+        "business_fits", "setting", "existing_uses", "water_features", "drive_minutes_to_home", "drive_minutes_to_metro", "listing_status", "red_flags", "to_verify", "research_notes", "url",
     ]
 
     def __init__(self, out_dir: Path) -> None:
@@ -41,7 +41,9 @@ class CsvReporter(Reporter):
                     "score": e.score, "new": f.url in new_urls, "title": f.title,
                     "property_type": "land" if f.is_land else (f.property_type or "improved"), "price_usd": f.price_usd,
                     "acres": f.acres, "county": f.county, "state": f.state, "zoning": f.zoning,
-                    "zoning_class": f.zoning_class, "existing_uses": "; ".join(f.existing_uses),
+                    "zoning_class": f.zoning_class,
+                    "business_fits": "; ".join(f"{k}={v}" for k, v in f.business_fits.items()),
+                    "setting": f.setting, "existing_uses": "; ".join(f.existing_uses),
                     "water_features": "; ".join(f.water_features),
                     "drive_minutes_to_home": f.drive_minutes_to_home,
                     "drive_minutes_to_metro": f.drive_minutes_to_metro,

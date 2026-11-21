@@ -40,7 +40,7 @@ def test_commercial_zoning_beats_farm_only(settings, enricher):
 def test_existing_winery_overrides_farm_zoning_penalty(settings, enricher):
     ev = build_engine(settings).evaluate(enricher.enrich(facts(zoning="EFU", existing_uses=["winery"])))
     by = _by_id(ev)
-    assert by["commercial_pathway"].status is Status.PASS
+    assert by["business_pathway"].status is Status.PASS
     assert by["farm_only_no_existing_use"].points == 0
 
 
@@ -48,7 +48,7 @@ def test_ideal_property_scores_high(settings, enricher):
     ideal = facts(
         zoning="Rural Commercial", existing_uses=["event venue"], has_water_rights=True,
         water_features=["creek"], in_floodplain=False, largest_outbuilding_sqft=3000,
-        has_commercial_kitchen=True, dwellings=2, road_access="paved", county="King",
+        has_commercial_kitchen=True, dwellings=2, road_access="paved", county="King", setting="secluded",
     )
     ev = build_engine(settings).evaluate(enricher.enrich(ideal))
     assert ev.score >= 95

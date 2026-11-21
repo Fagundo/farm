@@ -47,6 +47,8 @@ class PropertyFacts:
     has_power: bool | None = None     # power on site or at the road
     has_public_water: bool | None = None
     septic: str | None = None         # "existing" | "approved" | "perc_tested" | "none"
+    setting: str | None = None        # "secluded" | "roadside" (relaxation favors secluded)
+    business_fits: dict[str, str] = field(default_factory=dict)  # use key -> Fit, set by enrichment
     in_floodplain: bool | None = None
     has_hoa: bool | None = None
     drive_minutes_to_metro: int | None = None

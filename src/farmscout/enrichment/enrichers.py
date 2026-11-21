@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import replace
 
+from farmscout.business import BusinessFitAssessor, SettingDetector
 from farmscout.domain.models import PropertyFacts
 from farmscout.geo.drive_time import CountyTable, DriveTimeModel, Place
 from farmscout.zoning.classifier import ZoningClassifier
@@ -78,3 +79,28 @@ class EnrichmentChain(Enricher):
         for e in self._enrichers:
             facts = e.enrich(facts)
         return facts
+
+
+class SettingEnricher(Enricher):
+    """Fills ``setting`` (secluded/roadside) from the title, summary and research notes when the
+    extractor left it blank. Re-run on every rescore, so older records pick it up too."""
+
+    def __init__(self, detector: SettingDetector) -> None:
+        self._d = detector
+
+    def enrich(self, facts: PropertyFacts) -> PropertyFacts:
+        if facts.setting:
+            return facts
+        found = self._d.detect(facts.title, facts.summary, facts.research_notes)
+        return replace(facts, setting=found) if found else facts
+
+
+class BusinessFitEnricher(Enricher):
+    """Records which business types (venue, food, wellness) the property could host.
+    Must run after ZoningClassEnricher."""
+
+    def __init__(self, assessor: BusinessFitAssessor) -> None:
+        self._a = assessor
+
+    def enrich(self, facts: PropertyFacts) -> PropertyFacts:
+        return replace(facts, business_fits=self._a.fits(facts))

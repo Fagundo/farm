@@ -1,0 +1,12 @@
+[
+  {"url": "https://www.innshopper.com/ViewListing.aspx?ListingID=12589",
+   "title": "Decatur Island retreat and guesthouse (B&B option), Anacortes", "source": "web:innshopper",
+   "price_usd": 449000, "state": "WA", "county": "San Juan", "city": "Decatur Island",
+   "existing_uses": ["bed and breakfast"], "has_barn": true, "dwellings": 3,
+   "summary": "Island compound: 3-bed main house (B&B option), owner's cabin, studio apartment with a vacation-rental permit, barn, bunkhouse, greenhouse. Acreage and boat/ferry access not stated."},
+  {"url": "https://www.tworld.com/buy-a-business/listings/estate-winery-vineyard-and-tasting-rooms-includes-real-estate",
+   "title": "Estate winery and vineyard with tasting rooms, Klickitat County", "source": "web:tworld",
+   "price_usd": 895000, "state": "WA", "county": "Klickitat",
+   "existing_uses": ["winery", "tasting room"],
+   "summary": "Business sale including real estate: estate vineyard with 3 acres under vine, by-appointment tasting at the estate plus two off-site tasting rooms (OR and WA). Total acreage, house and zoning not stated."}
+]
